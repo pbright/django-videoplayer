@@ -444,7 +444,7 @@ export class VideoPlayer {
     this.teardown();
 
     const classNames = ['metadata-loaded', 'canplay', 'canplaythrough',
-      'player-paused', 'paused', 'player-playing playing'];
+      'player-paused', 'paused', 'player-playing', 'playing'];
     for (let className of classNames) {
       this.videoWrapper.classList.remove(className);
     }
