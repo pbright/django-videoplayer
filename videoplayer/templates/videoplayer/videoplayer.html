@@ -1,20 +1,17 @@
-<div class='video-player {{- ' loading' if autoplay else '' }}'>
+<div class='video-player {{ "loading" if autoplay else '' }}'>
   <div class='video-wrap'>
     <video preload='none'
-           {%- if preload != 'none' %} data-preload='{{ preload }}'{% endif %}
-           {%- if autoplay %} data-autoplay='true'{% endif %}
-           {%- if loop %} loop{% endif %}
-           {%- if controls %} controls{% endif %}
-           {%- if muted %} muted{% endif %}>
+           {% if preload != 'none' %} data-preload='{{ preload }}'{% endif %}
+           {% if autoplay %} data-autoplay='true'{% endif %}
+           {% if loop %} loop{% endif %}
+           {% if controls %} controls{% endif %}
+           {% if muted %} muted{% endif %}>
       {% for desktop, mobile, type in sources %}
         <source data-src='{{ desktop }}'
-                {%- if mobile %} data-mobileSrc='{{ mobile }}' {% endif -%}
+                {% if mobile %} data-mobileSrc='{{ mobile }}' {% endif %}
                 type='{{ type }}'>
       {% endfor %}
     </video>
-    {# TODO: Poster covers the video, so if the video isn't set to autoplay and
-       there are no controls, we need to hide the poster with css otherwise the
-       user has no way of seeing the video. #}
     {% if poster_markup  %}
       {{ poster_markup|safe }}
     {% endif %}

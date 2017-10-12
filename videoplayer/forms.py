@@ -1,17 +1,22 @@
 from django import forms
 
 from .application import get_file_type
-from .models import VideoSource
 
 
-VALID_TYPES = ('mp4', 'webm', 'ogg')
-UNSUPPORTED_ERROR = \
-    'Unsupported file type. Supported types: %s' % ', '.join(VALID_TYPES)
+class VideoSourceFormMixin(object):
+    """
+    Form mixin for VideoSources which validates that the file type is the same
+    for both source and mobile_source.
 
+    Example implementation:
 
-class VideoSourceForm(forms.ModelForm):
-    model = VideoSource
+    from django import forms
+    from videoplayer.forms import VideoSourceFormMixin
+    from .models import VideoSource
 
+    class VideoSourceForm(VideoSourceFormMixin, forms.ModelForm):
+        model = VideoSource
+    """
     def clean(self):
         source = self.cleaned_data['source']
         mobile_source = self.cleaned_data['mobile_source']

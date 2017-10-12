@@ -5,8 +5,6 @@ import {isPhone} from '../src/constants';
 let nextPlayerId = 1;
 const LOADED_VIDEOS = [];
 
-// TODO: Test with more than 6 videos
-
 // TODO: Replace these with a node module
 function addEventListener (el, eventName, handler) {
   if (el.addEventListener) {
@@ -19,7 +17,7 @@ function addEventListener (el, eventName, handler) {
 }
 
 function triggerEvent (el, eventName, options) {
-  var event;
+  let event;
   if (window.CustomEvent) {
     event = new window.CustomEvent(eventName, options);
   } else {
@@ -41,8 +39,6 @@ function addListenerMulti (el, s, fn) {
   Adds handlers for .video-controls, if present.
 
   Commences playback if there is an autoplay data attribute.
-
-  See src/video_player/application.py for video related gotchas.
 */
 export class VideoPlayer {
   constructor (opts = {}, el) {

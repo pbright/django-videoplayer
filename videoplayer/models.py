@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 
-from .application import video_player, get_file_type
+from .application import videoplayer
 
 
 VALID_TYPES = ['mp4', 'webm', 'ogg']
@@ -18,29 +18,54 @@ def validate_video_type(value):
         raise ValidationError(UNSUPPORTED_ERROR)
 
 
+def get_file_type(path):
+    ext = os.path.splitext(path)[1]  # [0] returns path+filename
+    return ext.lstrip('.').lower()
+
+
 class AbstractVideo(models.Model):
-    '''
+    """
     Abstract parent class for a video, which requires the child class to
     provide either:
-    1. A sources attribute returning a queryset of model instances each with a
-    source and optionally mobile_source field; or
-    2. A source and (optionally) mobile_source attributes
+    1. A source field and type property, and optionally mobile_source
+    attribute; or (to support multiple sources)
+    2. A sources attribute returning a queryset of model instances each with a
+    source field and type property, and optionally mobile_source field. An
+    AbstractVideoSource class is provided for this purpose.
 
     This class provides:
     1. Defaults for the following video element properties, which can be
     overridden by a field or attribute of the same name on the child class:
     autoplay, loop, controls, muted
     2. A render_video method which will render a video based on the above
-    properties and the source attributes provided by the child.
+    properties and the source (and mobile_source if present) attribute on
+    self.sources or (if self.sources not present) self.
 
     Note that this class does not provide a poster image. Using a poster image
-    is strongly recommended, and can be provided to render_video via the
-    argument 'poster_markup'.
+    is required in the default implementation as it is used to determine the
+    aspect ratio of the video, and can be provided to render_video via the
+    poster_markup keyword argument.
 
-    eg.
-    class TestVideo(Image, Video):
+    Minimal implementation example:
+
+    from videoplayer.models import \
+        AbstractVideo, validate_video_type, get_file_type
+
+    class TestVideo(AbstractVideo):
+        poster_image = models.ImageField(upload_to=settings.UPLOAD_PATH)
+
+        source = models.FileField(upload_to=settings.UPLOAD_PATH,
+                                  validators=[validate_video_type])
+        mobile_source = models.FileField(upload_to=settings.UPLOAD_PATH,
+                                         validators=[validate_video_type],
+                                         blank=True, null=True)
+
         loop = models.BooleanField(default=True)
         muted = models.BooleanField(default=True)
+
+        @property
+        def type(self):
+            return 'video/%s' % get_file_type(self.source.url)
 
         @property
         def autoplay(self):
@@ -50,11 +75,14 @@ class AbstractVideo(models.Model):
         def controls(self):
             return False
 
-        def render_video(self, poster_dimensions, **kwargs):
-            poster_markup = self.render_image(poster_dimensions, **kwargs)
+        def render_video(self, **kwargs):
+            poster_markup = '<img src="%s" />' % self.poster_image.url
             return super(TestVideo, self).render_video(
                 poster_markup=poster_markup)
-    '''
+
+        def __str__(self):
+            return str(self.source)
+    """
     class Meta:
         abstract = True
 
@@ -89,15 +117,46 @@ class AbstractVideo(models.Model):
             file_type = 'video/%s' % get_file_type(self.source.url)
             sources.append((self.source.url, mobile_source, file_type))
 
-        return video_player(sources, autoplay=autoplay, loop=loop,
-                            controls=controls, muted=muted,
-                            **kwargs)
+        return videoplayer(sources, autoplay=autoplay, loop=loop,
+                           controls=controls, muted=muted,
+                           **kwargs)
 
 
 class AbstractVideoSource(models.Model):
-    '''
+    """
     Abstract parent class for a video source.
-    '''
+
+    Minimal implementation example:
+
+    from videoplayer.models import AbstractVideo, AbstractVideoSource
+
+    class TestVideo(AbstractVideo):
+        poster_image = models.ImageField(upload_to=settings.UPLOAD_PATH)
+
+        autoplay = models.BooleanField(default=True)
+        loop = models.BooleanField(default=True)
+
+        @property
+        def muted(self):
+            return not self.autoplay
+
+        @property
+        def controls(self):
+            if self.autoplay and self.loop:
+                return False
+            return True
+
+        def render_video(self, **kwargs):
+            poster_markup = '<img src="%s" />' % self.poster_image.url
+            return super(TestVideo, self).render_video(
+                poster_markup=poster_markup)
+
+        def __str__(self):
+            return str(self.sources.first())
+
+    class VideoSource(AbstractVideoSource):
+        video = models.ForeignKey(Video, related_name='sources')
+    """
     source = models.FileField(upload_to=settings.UPLOAD_PATH,
                               validators=[validate_video_type])
     mobile_source = models.FileField(upload_to=settings.UPLOAD_PATH,
@@ -113,23 +172,3 @@ class AbstractVideoSource(models.Model):
 
     def __str__(self):
         return str(self.source)
-
-
-class Video(AbstractVideo):
-    '''
-    Convenience implementation of a basic AbstractVideo.
-
-    See VideoSource below.
-    '''
-    def __str__(self):
-        return str(self.sources.first())
-
-
-class VideoSource(AbstractVideoSource):
-    '''
-    Convenience implementation of a basic AbstractVideoSource.
-
-    An inline admin model is provided in ./admin.py that should be included as
-    an inline of Video or its subclass (as applicable).
-    '''
-    video = models.ForeignKey(Video, related_name='sources')

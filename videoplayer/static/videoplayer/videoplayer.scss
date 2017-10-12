@@ -1,28 +1,206 @@
-@mixin range-thumb {
-  &::-webkit-slider-thumb {
-    @content;
-  }
+$video-background: #000 !default;
+$video-controls-background: transparent !default;
+$video-controls-color: #fff !default;
+$video-controls-active-color: transparentize(#fff, .2) !default;
+$video-progress-track-background: $video-background !default;
+$video-progress-thumb-color: $video-controls-color !default;
 
-  &::-moz-range-thumb {
-    @content;
-  }
+$tablet-max: 1280px !default;  // Samsung Galaxy Note etc
+$desktop-min: $tablet-max + 1px !default;
+$phone-max: 667px !default; // Portrait iPhone6
+$tablet-min: $phone-max + 1px !default;
 
-  &::-ms-thumb {
-    @content;
+$fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
+
+@function nulleable-bool($value: null) {
+  @if $value == false or
+      $value == '' or
+      $value == "false" or
+      $value == 'false' or
+      $value == 0 {
+        @return false;
+      }
+  @if $value == null or
+      $value == "null" or
+      $value == 'null' {
+        @return null;
+      }
+  @return true;
+}
+
+@if !mixin-exists(fullscreen) {
+  @mixin fullscreen {
+    &.fullscreen { @content; }
+    &:-webkit-full-screen { @content; }
+    &:-moz-full-screen { @content; }
+    &:fullscreen { @content; }
   }
 }
 
-@mixin range-track {
-  &::-webkit-slider-runnable-track {
-    @content;
+@if !mixin-exists(hardware-accelerated) {
+  @mixin hardware-accelerated {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
   }
+}
 
-  &::-moz-range-track {
-    @content;
+@if !mixin-exists(hover) {
+  @mixin hover {
+    // Enable hover states on non-touch devices only, to avoid having to click
+    // the video twice to make it play on iOS devices.
+    .no-touchevents &:hover {
+      @content;
+    }
   }
+}
 
-  &::-ms-track {
-    @content;
+@if !mixin-exists(desktop) {
+  @mixin desktop($and-events: null,
+                 $or-events: null) {
+    @media screen and (min-width: $desktop-min) {
+      @if nulleable-bool($and-events) == null {
+        @content;
+      } @else if nulleable-bool($and-events) == true {
+        .pointerevents &,
+        .touchevents & {
+          @content;
+        }
+      } @else {
+        .no-pointerevents.no-touchevents & {
+          @content;
+        }
+      }
+    }
+
+    @if nulleable-bool($or-events) == true {
+      .pointerevents &,
+      .touchevents & {
+        @content;
+      }
+    } @else if nulleable-bool($or-events) == false {
+      .no-pointerevents.no-touchevents & {
+        @content;
+      }
+    }
+  }
+}
+
+@if !mixin-exists(tablet) {
+  @mixin tablet($and-events: null,
+                $or-events: null) {
+    @media screen and (max-width: $tablet-max) and (min-width: $tablet-min) {
+      @if nulleable-bool($and-events) == null {
+        @content;
+      } @else if nulleable-bool($and-events) == true {
+        .pointerevents &,
+        .touchevents & {
+          @content;
+        }
+      } @else {
+        .no-pointerevents.no-touchevents & {
+          @content;
+        }
+      }
+    }
+
+    @if nulleable-bool($or-events) == true {
+      .pointerevents &,
+      .touchevents & {
+        @content;
+      }
+    } @else if nulleable-bool($or-events) == false {
+      .no-pointerevents.no-touchevents & {
+        @content;
+      }
+    }
+  }
+}
+
+@if !mixin-exists(phone) {
+  @mixin phone($and-events: null,
+               $or-events: null) {
+    @media screen and (max-width: $phone-max) {
+      @if nulleable-bool($and-events) == null {
+        @content;
+      } @else if nulleable-bool($and-events) == true {
+        .pointerevents &,
+        .touchevents & {
+          @content;
+        }
+      } @else {
+        .no-pointerevents.no-touchevents & {
+          @content;
+        }
+      }
+    }
+
+    @if nulleable-bool($or-events) == true {
+      .pointerevents &,
+      .touchevents & {
+        @content;
+      }
+    } @else if nulleable-bool($or-events) == false {
+      .no-pointerevents.no-touchevents & {
+        @content;
+      }
+    }
+  }
+}
+
+@if !mixin-exists(range-thumb) {
+  @mixin range-thumb {
+    &::-webkit-slider-thumb {
+      @content;
+    }
+
+    &::-moz-range-thumb {
+      @content;
+    }
+
+    &::-ms-thumb {
+      @content;
+    }
+  }
+}
+
+@if !mixin-exists(range-track) {
+  @mixin range-track {
+    &::-webkit-slider-runnable-track {
+      @content;
+    }
+
+    &::-moz-range-track {
+      @content;
+    }
+
+    &::-ms-track {
+      @content;
+    }
+  }
+}
+
+@if !mixin-exists(greyscale) {
+  @mixin greyscale($amount) {
+    @if $amount > 0 {
+      // Firefox 10-34
+      filter: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='grayscale'><feColorMatrix type='saturate' values='0'/></filter></svg>#grayscale");
+    } @else {
+      filter: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='grayscale'><feColorMatrix type='matrix' values='1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 1 0'/></filter></svg>#grayscale");
+    }
+
+    // Chrome 19+,
+    // Safari 6+,
+    // Safari 6+ iOS,
+    // Opera 15+
+    -webkit-filter: grayscale($amount * 100%);
+
+    // Firefox 35+
+    filter: grayscale($amount * 100%);
+
+    @if $amount > 0 {
+      // IE 6-9
+      filter: gray;
+    }
   }
 }
 
@@ -34,7 +212,7 @@
       width: 100%;
       top: 0;
       height: 100%;
-      z-index: $overlay-zindex;
+      z-index: $fullscreen-zindex;
     }
   }
 
@@ -118,13 +296,20 @@
 
   .image,
   .poster {
-    @include transition(#{ opacity 500ms, visibility 500ms });
+    -moz-transition: opacity 500ms, visibility 500ms;
+    -webkit-transition: opacity 500ms, visibility 500ms;
+    transition: opacity 500ms, visibility 500ms;
     opacity: 1;
     visibility: inherit;
     z-index: 2;
     cursor: pointer;
+    background: $video-background;
 
     @include desktop-and-tablet {
+      position: relative;
+    }
+
+    @include tablet {
       position: relative;
     }
 
@@ -136,18 +321,18 @@
       visibility: hidden;
     }
 
-    .aspect-maintainer {
-      background: $video-background;
-    }
-
     .caption {
       top: 100%;
       left: 1px;
       margin-top: 10px;
       font-size: 15px;
 
-      @include desktop-and-tablet {
-        position: absolute;  // to .image
+      @include desktop {
+        position: absolute;  // to .image / .poster
+      }
+
+      @include tablet {
+        position: absolute;  // to .image / .poster
       }
 
       @include phone {
@@ -263,7 +448,7 @@
       // clear defaults
       -webkit-appearance: none;
       outline: none;
-      background: $video-controls-background;  // fallback, see video_player.js
+      background: $video-controls-background;  // fallback, see videoplayer.js
       color: $video-controls-color;
       display: inline-block;
       vertical-align: top;
@@ -426,7 +611,7 @@
     .poster {
       cursor: default;
 
-      .aspect-maintainer {
+      > * {
         @include greyscale(1);
         opacity: .5;
       }
