@@ -1,0 +1,89 @@
+<div class='video-player {{- ' loading' if autoplay else '' }}'>
+  <div class='video-wrap'>
+    <video preload='none'
+           {%- if preload != 'none' %} data-preload='{{ preload }}'{% endif %}
+           {%- if autoplay %} data-autoplay='true'{% endif %}
+           {%- if loop %} loop{% endif %}
+           {%- if controls %} controls{% endif %}
+           {%- if muted %} muted{% endif %}>
+      {% for desktop, mobile, type in sources %}
+        <source src='{{ desktop }}' data-src='{{ desktop }}'
+                {%- if mobile %} data-mobile-src='{{ mobile }}' {% endif -%}
+                type='{{ type }}'>
+      {% endfor %}
+    </video>
+    {# TODO: Poster covers the video, so if the video isn't set to autoplay and
+       there are no controls, we need to hide the poster with css otherwise the
+       user has no way of seeing the video. #}
+    {% if poster_markup  %}
+      {{ poster_markup|safe }}
+    {% endif %}
+    {% if controls %}
+      <button class='playpause' type='button'>
+        <svg viewBox='0 0 55 55'>
+          <path d='M 7 51 L 7 6 L 51.7 28.5 L 7 51'
+                class='symbol'></path></svg>
+      </button>
+      <nav class='video-controls'>
+        <div class='right'>
+          <button class='mute' type='button'>
+            <svg viewBox='0 0 32 32' class='audible'>
+              <path d='M 26.7 7.6 C 26 7 25 7 24.4 7.6 C 23.7 8.3 23.7 9.3
+                       24.4 10 L 24.4 10 C 26.5 12.1 27.5 14.8 27.5 17.6 C
+                       27.5 20.4 26.5 23.1 24.4 25.3 C 23.7 25.9 23.7 26.9
+                       24.4 27.6 C 24.7 27.9 25.1 28.1 25.5 28.1 C 25.9 28.1
+                       26.4 27.9 26.7 27.6 C 29.5 24.8 30.8 21.2 30.8 17.6 C
+                       30.8 14 29.5 10.4 26.7 7.6Z M 5 12.2 L 5 23.1 L 9.9
+                       23.1 L 20.9 31.2 L 20.9 4 L 9.9 12.2 L 5 12.2 L 5 12.2Z'
+                    class='symbol'>
+              </path>
+            </svg>
+            <svg viewBox='0 0 32 32' class='muted'>
+              <path d='M 25.9 4 L 14.9 12.1 L 10 12.1 L 10 23 L 14.9 23 L
+                       25.9 31.1 L 25.9 4 L 25.9 4'
+                    class='symbol'>
+              </path>
+            </svg>
+
+          </button>
+          <!--[if IE ]>
+            <button class='volinc' type='button'>
+              Vol+
+            </button>
+            <button class='voldec' type='button'>
+              Vol-
+            </button>
+          <![endif]-->
+          <!--[if !IE]><!-->
+            <input type='range' class='volume-bar' min='0' max='1'
+                   step='0.1' value='1'>
+          <!--<![endif]-->
+
+          <button class='fs' type='button'>
+            <svg viewBox='0 0 35 35'>
+              <path d='M 22.3 4 L 26.1 7.8 L 20.1 13.8 L 23.2 16.9 L 29.2 10.9 L
+                       33 14.6 L 33 4 L 22.3 4Z M 13.7 20.1 L 7.7 26.1 L 4 22.4
+                       L 4 33 L 14.6 33 L 10.8 29.2 L 16.9 23.2 L 13.7 20.1 L
+                       13.7 20.1Z'
+                    class='symbol'>
+              </path>
+            </svg>
+          </button>
+        </div>
+      </nav>
+      <div class='progress-wrap'>
+        <!--[if IE ]>
+          <div class='fallback-progress'>
+            <div class='fallback-progress-bar'></div>
+          </div>
+        <![endif]-->
+        <!--[if !IE]><!-->
+          <input type='range' class='progress-bar' value='0' step='0.25'>
+        <!--<![endif]-->
+      </div>
+    {% endif %}
+  </div>
+  {% if caption %}
+    <p class='caption'>{{ caption }}</p>
+  {% endif %}
+</div>
