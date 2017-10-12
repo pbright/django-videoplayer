@@ -86,6 +86,20 @@
     }
   }
 
+  @include tablet($and-events: true) {
+    .playpause {
+      visibility: inherit;
+      opacity: 1;
+    }
+  }
+
+  @include phone {
+    .playpause {
+      visibility: inherit;
+      opacity: 1;
+    }
+  }
+
   video {
     // positioned absolutely, poster is compulsory and used to determine
     // aspect ratio.
@@ -415,8 +429,7 @@
     }
   }
 
-  &.loading,
-  &.loading-spinner-only {
+  &.loading {
     .playpause {
       opacity: .75;
       visibility: inherit;
@@ -478,8 +491,7 @@
     }
   }
 
-  &.playing:not(.loading):not(.loading-spinner-only),
-  &.player-playing:not(.loading):not(.loading-spinner-only) {
+  &.playing {
     // becomes a pointer when the user takes some activity (ie. cursor disappears
     // when watching if it's not being used).
     cursor: none;
@@ -545,9 +557,10 @@
       }
 
       &:before {
-        content: '\258E \258E';
-        letter-spacing: -.5em;
-        margin-left: .25em;
+        font-family: sans-serif;
+        content: '\258E\00a0\258E';
+        letter-spacing: -.4em;
+        margin-left: .3em;
 
         @include desktop {
           margin-top: 0;
@@ -599,7 +612,7 @@
     }
   }
 
-  &.paused.player-paused:not(.loading):not(.loading-spinner-only) {
+  &.paused {
     video {
       visibility: inherit;
     }
