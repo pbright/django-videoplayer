@@ -7,8 +7,8 @@
            {%- if controls %} controls{% endif %}
            {%- if muted %} muted{% endif %}>
       {% for desktop, mobile, type in sources %}
-        <source src='{{ desktop }}' data-src='{{ desktop }}'
-                {%- if mobile %} data-mobile-src='{{ mobile }}' {% endif -%}
+        <source data-src='{{ desktop }}'
+                {%- if mobile %} data-mobileSrc='{{ mobile }}' {% endif -%}
                 type='{{ type }}'>
       {% endfor %}
     </video>
