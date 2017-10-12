@@ -112,7 +112,7 @@
     visibility: hidden;
 
     .no-js & {
-      visibility: visible;
+      visibility: inherit;
     }
   }
 
@@ -130,6 +130,10 @@
 
     @include phone {
       position: static;
+    }
+
+    .no-js & {
+      visibility: hidden;
     }
 
     .aspect-maintainer {
