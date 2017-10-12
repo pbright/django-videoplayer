@@ -4,9 +4,9 @@ Video related gotchas:
    ajax page load never completing, because it doesn't release resources from
    previously played videos correctly, and "concurrent" videos are limited
    to 6. The telltale sign for this is "Waiting for available socket" message
-   in the bottom left of your browser (it may require a reload to see this).
-   This is mostly a problem if you are updating videos dynamically or have ajax
-   page loads.
+   in the bottom left of your browser (it may require attempting reload to see
+   this). This is mostly a problem if you are updating videos dynamically or
+   have ajax page loads.
 
    This can be worked around (except for videos that remain in the DOM between
    page loads, see below) by setting the src to '', detaching the video element
@@ -17,13 +17,8 @@ Video related gotchas:
 
 2. We don't include the preload attribute in the html, but swap it in after the
    initial window load using js, because otherwise Chrome massively exacerbates
-   the above problem by:
-   - loading a single video up to 5 times if the preload attribute is set to
-     anything other than none.
-   - trying to preload videos found in pages fetched via ajax, even if the
-     video is never added to the DOM (eg. it is in the header or some other
-     persistent element), if the video's preload attribute is set to anything
-     other than "none".
+   the above problem by loading a single video up to 5 times if the preload
+   attribute is set to anything other than none.
 
 3. On iOS, if a call to the video element's play() method is not
    based on user input with a reasonable level of proximity, the video
@@ -35,8 +30,7 @@ Video related gotchas:
 
 5. On iPhones running <= iOS9, videos non-optionally open in a
    separate player. On iOS10 the video can be made to play inline. On
-   non-iOS devices and iPads, the video typically plays inline. You must
-   account for all possibilities, even though the design probably won't.
+   non-iOS devices and iPads, the video typically plays inline.
 
 6. If you are providing a fullscreen button, make sure you test it on every
    page. Browsers use z-index to place the fullscreen element on top, but
@@ -47,6 +41,8 @@ Video related gotchas:
    meddle with other css properties on ancestors of the video element, such as
    transforms.
 
-7. Videos set to loop may not loop on your local runserver, as runserver
+7. Videos set to loop may not loop on Django's runserver, as runserver
    doesn't support partial content requests.
    http://stackoverflow.com/questions/8088364/html5-video-will-not-loop
+
+8. Seeking using the progress bar may not work on Django's runserver.
