@@ -52,9 +52,6 @@ export class VideoPlayer {
       opts = {};
     }
 
-    // pretend we didn't get passed jQuery
-    el = el[0];
-
     this.videoWrapper = el;
     this.video = this.videoWrapper.getElementsByTagName('video')[0];
 
