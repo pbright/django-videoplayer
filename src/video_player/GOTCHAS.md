@@ -28,7 +28,7 @@ Video related gotchas:
 3. On iOS, if a call to the video element's play() method is not
    based on user input with a reasonable level of proximity, the video
    will not play. This can conflict with our requirement in point 1. See
-   point 3 below.
+   point 4 below.
 
 4. A replaceSrc method is provided which can be used to replace the
    existing source in a way that will keep both Chrome and iPhones happy.
