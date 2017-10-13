@@ -211,12 +211,15 @@ export class VideoPlayer {
 
   fullscreenStateTracking () {
     document.addEventListener('fullscreenchange', (e) => {
-      if (document.fullScreen || document.fullscreenElement) {
-        this.videoWrapper.classList.add('fullscreen');
-        document.body.classList.add('fullscreened-element');
-      } else {
-        this.videoWrapper.classList.remove('fullscreen');
-        document.body.classList.remove('fullscreened-element');
+      const target = e.target || e.srcElement;
+      if (this.videoWrapper.is(target)) {
+        if (document.fullScreen || document.fullscreenElement) {
+          this.videoWrapper.classList.add('fullscreen');
+          document.body.classList.add('fullscreened-element');
+        } else {
+          this.videoWrapper.classList.remove('fullscreen');
+          document.body.classList.remove('fullscreened-element');
+        }
       }
     });
 
@@ -225,32 +228,41 @@ export class VideoPlayer {
     });
 
     document.addEventListener('webkitfullscreenchange', (e) => {
-      if (document.webkitIsFullScreen) {
-        this.videoWrapper.classList.add('fullscreen');
-        document.body.classList.add('fullscreened-element');
-      } else {
-        this.videoWrapper.classList.remove('fullscreen');
-        document.body.classList.remove('fullscreened-element');
+      const target = e.target || e.srcElement;
+      if (this.videoWrapper.is(target)) {
+        if (document.webkitIsFullScreen) {
+          this.videoWrapper.classList.add('fullscreen');
+          document.body.classList.add('fullscreened-element');
+        } else {
+          this.videoWrapper.classList.remove('fullscreen');
+          document.body.classList.remove('fullscreened-element');
+        }
       }
     });
 
     document.addEventListener('mozfullscreenchange', (e) => {
-      if (document.mozFullScreen) {
-        this.videoWrapper.classList.add('fullscreen');
-        document.body.classList.add('fullscreened-element');
-      } else {
-        this.videoWrapper.classList.remove('fullscreen');
-        document.body.classList.remove('fullscreened-element');
+      const target = e.target || e.srcElement;
+      if (this.videoWrapper.is(target)) {
+        if (document.mozFullScreen) {
+          this.videoWrapper.classList.add('fullscreen');
+          document.body.classList.add('fullscreened-element');
+        } else {
+          this.videoWrapper.classList.remove('fullscreen');
+          document.body.classList.remove('fullscreened-element');
+        }
       }
     });
 
     document.addEventListener('msfullscreenchange', (e) => {
-      if (document.msFullscreenElement) {
-        this.videoWrapper.classList.add('fullscreen');
-        document.body.classList.add('fullscreened-element');
-      } else {
-        this.videoWrapper.classList.remove('fullscreen');
-        document.body.classList.remove('fullscreened-element');
+      const target = e.target || e.srcElement;
+      if (this.videoWrapper.is(target)) {
+        if (document.msFullscreenElement) {
+          this.videoWrapper.classList.add('fullscreen');
+          document.body.classList.add('fullscreened-element');
+        } else {
+          this.videoWrapper.classList.remove('fullscreen');
+          document.body.classList.remove('fullscreened-element');
+        }
       }
     });
   }
