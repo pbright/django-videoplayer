@@ -44,9 +44,10 @@ last time this README was updated).
    separate player. On iOS10 the video can be made to play inline. On
    non-iOS devices and iPads, the video typically plays inline.
 
-6. If you are providing a fullscreen button, testing on every page is required.
-   Browsers use z-index to place the fullscreen element on top, but that can
-   fail due to stacking context, and position: fixed gave unexpected results.
+6. If you are providing a fullscreen button, testing on every page is
+   recommended. Browsers use z-index to place the fullscreen element on top,
+   but that can fail due to stacking context, and position: fixed can give 
+   unexpected results.
 
    Some browsers attempt to resolve these issues by (for example) setting all
    ancestors of the fullscreened element to position: static, but this can
