@@ -1,11 +1,26 @@
-import {extendObject} from './tools';
-import {isPhone} from '../src/constants';
+// TODO: Replace these with node modules?
 
-// track loaded videos due to Chrome refusing to load any more than 6
-let nextPlayerId = 1;
-const LOADED_VIDEOS = [];
+function getWindowWidth () {
+  var e = window;
+  var a = 'inner';
+  if (!('innerWidth' in window)) {
+    a = 'client';
+    e = document.documentElement || document.body;
+  }
+  return e[a + 'Width'];
+}
 
-// TODO: Replace these with a node module
+function extendObject () {
+  for (let i = 1; i < arguments.length; i++) {
+    for (let key in arguments[i]) {
+      if (arguments[i].hasOwnProperty(key)) {
+        arguments[0][key] = arguments[i][key];
+      }
+    }
+  }
+  return arguments[0];
+}
+
 function addEventListener (el, eventName, handler) {
   if (el.addEventListener) {
     el.addEventListener(eventName, handler);
@@ -31,16 +46,28 @@ function addListenerMulti (el, s, fn) {
   s.split(' ').forEach(e => addEventListener(el, e, fn));
 }
 
-/*
-  VideoPlayer
+// track loaded videos due to Chrome refusing to load any more than 6
+let nextPlayerId = 1;
+const LOADED_VIDEOS = [];
 
-  Adds and removes classes to videoWrapper based on playback status.
-
-  Adds handlers for .video-controls, if present.
-
-  Commences playback if there is an autoplay data attribute.
-*/
+/**
+  * @class ScrollableCarousel
+  *
+  * Lightweight HTML5 video player.
+  *
+  * 1. Adds and removes classes to videoWrapper based on playback status.
+  * 2. Adds handlers for .video-controls, if present.
+  * 3. Commences playback based on autoplay data attribute.
+  * 4. Worksaround various browser bugs.
+  */
 export class VideoPlayer {
+  /**
+   * Constructs an instance of VideoPlayer.
+   *
+   * @param {object} opts
+   * @param {HtmlElement} el
+   * @constructs VideoPlayer
+   */
   constructor (opts = {}, el) {
     // account for scenario where we didn't receive any opts
     if (!el) {
@@ -79,7 +106,7 @@ export class VideoPlayer {
       this.autoplayData = true;
     }
 
-    if (!isPhone(false) &&
+    if (getWindowWidth() > this.options.phoneMax &&
         (this.autoplayData === true ||
          this.autoplayData === 'canplaythrough')) {
       this.videoWrapper.classList.add('loading');
@@ -99,7 +126,7 @@ export class VideoPlayer {
     // If the video is to autoplay, enforce preload auto.
     if ((this.autoplayData === true ||
          this.autoplayData === 'canplaythrough') &&
-        !isPhone(false)) {
+        getWindowWidth() > this.options.phoneMax) {
       this.preload = 'auto';
     }
 
@@ -108,11 +135,18 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * Called prior to a video element being loaded by
+   * [loadVideo]{@link VideoPlayer#loadVideo}. Assigns the appropriate source
+   * based on window width.
+   *
+   * @method VideoPlayer#assignSources
+   */
   assignSources () {
     for (let source of this.sources) {
       const desktopSrc = source.dataset.src;
       let mobileSrc = '';
-      if (isPhone(false)) {
+      if (getWindowWidth() <= this.options.phoneMax) {
         mobileSrc = source.dataset.mobileSrc;
       }
       if (mobileSrc) {
@@ -123,17 +157,33 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * Assigns handlers to add / remove the following (self-explanatory) classes
+   * to / from videoWrapper:
+   *
+   * playing
+   * paused
+   * metadata-loaded
+   * loaded
+   * canplay
+   * canplaythrough
+   * muted
+   * user-activity
+   *
+   * @method VideoPlayer#videoStateTracking
+   */
   videoStateTracking () {
     this.video.addEventListener('loadstart', () => {
       const classList =
-        ['playing', 'paused', 'metadata-loaded', 'loaded', 'canplaythrough'];
+        ['playing', 'paused', 'metadata-loaded', 'loaded', 'canplay',
+          'canplaythrough'];
       for (let className of classList) {
         this.videoWrapper.classList.remove(className);
       }
 
       if ((this.autoplayData === true ||
           this.autoplayData === 'canplaythrough') &&
-          !isPhone(false)) {
+          getWindowWidth() > this.options.phoneMax) {
         this.videoWrapper.classList.add('loading');
       }
     });
@@ -147,7 +197,7 @@ export class VideoPlayer {
       this.videoWrapper.classList.add('canplay');
 
       if (this.autoplayData === true &&
-          !isPhone(false)) {
+          getWindowWidth() > this.options.phoneMax) {
         this.play();
       }
     });
@@ -157,7 +207,7 @@ export class VideoPlayer {
       this.videoWrapper.classList.add('canplaythrough');
 
       if (this.autoplayData === 'canplaythrough' &&
-          !isPhone(false)) {
+          getWindowWidth() > this.options.phoneMax) {
         this.play();
       }
     });
@@ -209,6 +259,13 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * Assigns handlers to add / remove the fullscreen class to / from
+   * videoWrapper, and the fullscreened-element calss to / from the body
+   * element.
+   *
+   * @method VideoPlayer#fullscreenStateTracking
+   */
   fullscreenStateTracking () {
     document.addEventListener('fullscreenchange', (e) => {
       const target = e.target || e.srcElement;
@@ -267,6 +324,11 @@ export class VideoPlayer {
     });
   }
 
+  /**
+   * Assigns handlers for user interaction with the controls (if any).
+   *
+   * @method VideoPlayer#controlHandlers
+   */
   controlHandlers () {
     // Currently not all browsers support styling the upper and lower parts
     // of the range-track (ie. a different color up to the thumbs location
@@ -398,6 +460,11 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * Assigns handlers for advancing the progress bar as the video plays.
+   *
+   * @method VideoPlayer#progressUpdaters
+   */
   progressUpdaters () {
     this.video.addEventListener('loadedmetadata', () => {
       for (let progressBar of this.progressBars) {
@@ -427,6 +494,14 @@ export class VideoPlayer {
     });
   }
 
+  /**
+   * Loads the video in an appropriate manner based on the preload parameter.
+   * Unloads an already loaded video if necessary to avoid Chrome's six video
+   * limit (see GOTCHAS.md).
+   *
+   * @method VideoPlayer#loadVideo
+   * @param {string} preload
+   */
   loadVideo (preload) {
     // If we've already loaded 6 videos, remove the oldest ones until
     // we only have 5, so the next video can start loading even in Chrome.
@@ -448,6 +523,11 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * Unloads the video, resetting the markup such that the poster is displayed.
+   *
+   * @method VideoPlayer#unloadVideo
+   */
   unloadVideo () {
     this.teardown();
 
@@ -458,12 +538,11 @@ export class VideoPlayer {
     }
   }
 
-  // Frequently we may need to differentiate between the video playing, and
-  // the video playing due to this module's play / pause methods being
-  // called. For example, when changing the video location via the
-  // progress bar, the video is temporarily paused (without using these
-  // functions), and it is unlikely we want this to be reflected in our
-  // style.
+  /**
+   * Plays the video.
+   *
+   * @method VideoPlayer#play
+   */
   play () {
     if (this.video.readyState === 0) {
       this.loadVideo();
@@ -471,16 +550,32 @@ export class VideoPlayer {
 
     this.video.play();
     this.videoWrapper.classList.remove('loading');
+    // Frequently we may need to differentiate between the video playing, and
+    // the video playing due to this module's play / pause methods being
+    // called. For example, when changing the video location via the
+    // progress bar, the video is temporarily paused (without using these
+    // functions), and it is unlikely we want this to be reflected in our
+    // style.
     this.videoWrapper.classList.add('player-playing');
     this.videoWrapper.classList.remove('player-paused');
   }
 
+  /**
+   * Pauses the video.
+   *
+   * @method VideoPlayer#pause
+   */
   pause () {
     this.video.pause();
     this.videoWrapper.classList.add('player-paused');
     this.videoWrapper.classList.remove('player-playing');
   }
 
+  /**
+   * Toggles between play / pause.
+   *
+   * @method VideoPlayer#playpause
+   */
   playpause () {
     if (this.videoWrapper.classList.contains('playing')) {
       this.pause();
@@ -489,6 +584,12 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * Changes the video volume.
+   *
+   * @method VideoPlayer#alterVolume
+   * @param {string} dir - '+' or '-'
+   */
   alterVolume (dir) {
     const currentVolume = Math.floor(this.video.volume * 10) / 10;
     if (dir === '+') {
@@ -503,6 +604,11 @@ export class VideoPlayer {
     this.video.muted = false;
   }
 
+  /**
+   * Checks whether there is a fullscreen element or not.
+   *
+   * @method VideoPlayer#isFullScreen
+   */
   isFullScreen () {
     return !!(document.fullScreen ||
               document.webkitIsFullScreen ||
@@ -511,6 +617,11 @@ export class VideoPlayer {
               document.fullscreenElement);
   }
 
+  /**
+   * Toggles whether the videoplayer is fullscreen or not.
+   *
+   * @method VideoPlayer#toggleFullscreen
+   */
   toggleFullscreen (toggle) {
     if (this.isFullScreen() || toggle === false) {
       if (document.exitFullscreen) {
@@ -535,6 +646,17 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * Unloads the existing video, then replaces it's sources with those
+   * contained in data.sources, which is expected to be a list of objects,
+   * each with a source and (optionally) mobileSource property.
+   *
+   * Note that this function does not alter the poster.
+   *
+   * @method VideoPlayer#replaceSrc
+   * @param {Object} data - {sources: [{source: '...', mobileSource: '...'}, ...]}
+   * @param {string} play - whether to play the video immediately after loading
+   */
   replaceSrc (data, play) {
     // Avoid Chrome bug.
     this.unloadVideo();
@@ -550,7 +672,7 @@ export class VideoPlayer {
     for (let sourceDict of data.sources) {
       const newSource = document.createElement('<source></source>');
       newSource.dataset.src = sourceDict.source;
-      newSource.dataset.mobileSrc = sourceDict.mobile_source;
+      newSource.dataset.mobileSrc = sourceDict.mobileSource;
       this.video.appendChild(newSource);
     }
 
@@ -562,6 +684,14 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * Ensures resources consumed by this video are released. This should be
+   * called whenever a video element is about to be removed from the DOM or
+   * wheever its sources are about to be changed (which it is recommended be
+   * done via replaceSrc).
+   *
+   * @method VideoPlayer#teardown
+   */
   teardown () {
     // See GOTCHAS.md.
     this.video.pause();
