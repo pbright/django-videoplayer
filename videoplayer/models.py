@@ -27,11 +27,11 @@ class AbstractVideo(models.Model):
     """
     Abstract parent class for a video, which requires the child class to
     provide either:
-    1. A source field and type property, and optionally mobile_source
-    attribute; or (to support multiple sources)
+    1. A source field, and optionally mobile_source field; or (to support
+    multiple sources)
     2. A sources attribute returning a queryset of model instances each with a
-    source field and type property, and optionally mobile_source field. An
-    AbstractVideoSource class is provided for this purpose.
+    source field, and optionally mobile_source field. An AbstractVideoSource
+    class is provided for this purpose.
 
     This class provides:
     1. Defaults for the following video element properties, which can be
@@ -52,7 +52,13 @@ class AbstractVideo(models.Model):
         AbstractVideo, validate_video_type, get_file_type
 
     class TestVideo(AbstractVideo):
-        poster_image = models.ImageField(upload_to=settings.UPLOAD_PATH)
+        img_height = models.PositiveSmallIntegerField(null=True, blank=True,
+                                                      editable=False)
+        img_width = models.PositiveSmallIntegerField(null=True, blank=True,
+                                                     editable=False)
+        poster_image = models.ImageField(upload_to=settings.UPLOAD_PATH,
+                                         width_field='img_width',
+                                         height_field='img_height')
 
         source = models.FileField(upload_to=settings.UPLOAD_PATH,
                                   validators=[validate_video_type])
@@ -76,13 +82,20 @@ class AbstractVideo(models.Model):
             return False
 
         def render_video(self, **kwargs):
-            poster_markup = '<img src="%s" />' % self.poster_image.url
+            poster_markup = '<img src="%s" height="%d" width="%d" />' %
+                (self.poster_image.url, self.img_height, self.img_width)
             return super(TestVideo, self).render_video(
                 poster_markup=poster_markup)
 
         def __str__(self):
             return str(self.source)
     """
+    @property
+    def type(self):
+        if hasattr(self, 'source'):
+            return 'video/%s' % get_file_type(self.source.url)
+        return ''
+
     class Meta:
         abstract = True
 
@@ -114,8 +127,7 @@ class AbstractVideo(models.Model):
             mobile_source = \
                 self.mobile_source.url \
                 if getattr(self, 'mobile_source', None) else ''
-            file_type = 'video/%s' % get_file_type(self.source.url)
-            sources.append((self.source.url, mobile_source, file_type))
+            sources.append((self.source.url, mobile_source, self.type))
 
         return videoplayer(sources, autoplay=autoplay, loop=loop,
                            controls=controls, muted=muted,
@@ -131,7 +143,13 @@ class AbstractVideoSource(models.Model):
     from videoplayer.models import AbstractVideo, AbstractVideoSource
 
     class TestVideo(AbstractVideo):
-        poster_image = models.ImageField(upload_to=settings.UPLOAD_PATH)
+        img_height = models.PositiveSmallIntegerField(null=True, blank=True,
+                                                      editable=False)
+        img_width = models.PositiveSmallIntegerField(null=True, blank=True,
+                                                     editable=False)
+        poster_image = models.ImageField(upload_to=settings.UPLOAD_PATH,
+                                         width_field='img_width',
+                                         height_field='img_height')
 
         autoplay = models.BooleanField(default=True)
         loop = models.BooleanField(default=True)
@@ -147,7 +165,8 @@ class AbstractVideoSource(models.Model):
             return True
 
         def render_video(self, **kwargs):
-            poster_markup = '<img src="%s" />' % self.poster_image.url
+            poster_markup = '<img src="%s" height="%d" width="%d" />' %
+                (self.poster_image.url, self.img_height, self.img_width)
             return super(TestVideo, self).render_video(
                 poster_markup=poster_markup)
 
