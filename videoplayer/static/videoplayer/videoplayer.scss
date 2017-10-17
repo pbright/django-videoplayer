@@ -6,9 +6,9 @@ $video-progress-track-background: $video-background !default;
 $video-progress-thumb-color: $video-controls-color !default;
 
 $tablet-max: 1280px !default;  // Samsung Galaxy Note etc
-$desktop-min: $tablet-max + 1px !default;
+$desktop-min: $tablet-max + 1px;
 $phone-max: 667px !default; // Portrait iPhone6
-$tablet-min: $phone-max + 1px !default;
+$tablet-min: $phone-max + 1px;
 
 $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
 
