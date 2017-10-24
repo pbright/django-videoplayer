@@ -28,23 +28,23 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
   @return true;
 }
 
-@if not(mixin-exists(fullscreen)) {
+// @if not(mixin-exists(fullscreen)) {
   @mixin fullscreen {
     &.fullscreen { @content; }
     &:-webkit-full-screen { @content; }
     &:-moz-full-screen { @content; }
     &:fullscreen { @content; }
   }
-}
+// }
 
-@if not(mixin-exists(hardware-accelerated)) {
+// @if not(mixin-exists(hardware-accelerated)) {
   @mixin hardware-accelerated {
     -webkit-transform: translate3d(0, 0, 0);
     transform: translate3d(0, 0, 0);
   }
-}
+// }
 
-@if not(mixin-exists(hover)) {
+// @if not(mixin-exists(hover)) {
   @mixin hover {
     // Enable hover states on non-touch devices only, to avoid having to click
     // the video twice to make it play on iOS devices.
@@ -52,9 +52,9 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       @content;
     }
   }
-}
+// }
 
-@if not (mixin-exists(desktop)) {
+// @if not (mixin-exists(desktop)) {
   @mixin desktop($and-events: null,
                  $or-events: null) {
     @media screen and (min-width: $desktop-min) {
@@ -83,9 +83,9 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       }
     }
   }
-}
+// }
 
-@if not(mixin-exists(tablet)) {
+// @if not(mixin-exists(tablet)) {
   @mixin tablet($and-events: null,
                 $or-events: null) {
     @media screen and (max-width: $tablet-max) and (min-width: $tablet-min) {
@@ -114,9 +114,9 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       }
     }
   }
-}
+// }
 
-@if not(mixin-exists(phone)) {
+// @if not(mixin-exists(phone)) {
   @mixin phone($and-events: null,
                $or-events: null) {
     @media screen and (max-width: $phone-max) {
@@ -145,9 +145,9 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       }
     }
   }
-}
+// }
 
-@if not(mixin-exists(range-thumb)) {
+// @if not(mixin-exists(range-thumb)) {
   @mixin range-thumb {
     &::-webkit-slider-thumb {
       @content;
@@ -161,9 +161,9 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       @content;
     }
   }
-}
+// }
 
-@if not(mixin-exists(range-track)) {
+// @if not(mixin-exists(range-track)) {
   @mixin range-track {
     &::-webkit-slider-runnable-track {
       @content;
@@ -177,9 +177,9 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       @content;
     }
   }
-}
+// }
 
-@if not(mixin-exists(clearfix)) {
+// @if not(mixin-exists(clearfix)) {
   @mixin clearfix {
     zoom: 1;
 
@@ -189,9 +189,9 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       display: table;
     }
   }
-}
+// }
 
-@if not(mixin-exists(greyscale)) {
+// @if not(mixin-exists(greyscale)) {
   @mixin greyscale($amount) {
     @if $amount > 0 {
       // Firefox 10-34
@@ -214,7 +214,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       filter: gray;
     }
   }
-}
+// }
 
 .video-player {
   @include fullscreen {
