@@ -86,8 +86,8 @@ class TestVideo(AbstractVideo):
                                      blank=True, null=True)
 
     def render_video(self, **kwargs):
-        poster_markup = '<img src="%s" height="%d" width="%d" />' %
-            (self.poster_image.url, self.img_height, self.img_width)
+        poster_markup = '<img src="%s" height="%d" width="%d" />' % (
+            self.poster_image.url, self.img_height, self.img_width)
         return super(TestVideo, self).render_video(
             poster_markup=poster_markup)
 
@@ -124,8 +124,8 @@ class TestVideo(AbstractVideo):
         return True
 
     def render_video(self, **kwargs):
-        poster_markup = '<img src="%s" height="%d" width="%d" />' %
-            (self.poster_image.url, self.img_height, self.img_width)
+        poster_markup = '<img src="%s" height="%d" width="%d" />' % (
+          self.poster_image.url, self.img_height, self.img_width)
         return super(TestVideo, self).render_video(
             poster_markup=poster_markup)
 

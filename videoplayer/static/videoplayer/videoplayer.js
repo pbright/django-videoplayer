@@ -82,7 +82,8 @@ export class VideoPlayer {
       progressUpperColor: 'currentColor',
       progressLowerColor: 'currentColor',
       volumeUpperColor: 'currentColor',
-      volumeLowerColor: 'currentColor'
+      volumeLowerColor: 'currentColor',
+      phoneMax: 667
     };
 
     this.options = extendObject(defaultOptions, opts);

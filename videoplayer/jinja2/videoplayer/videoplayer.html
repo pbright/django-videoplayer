@@ -1,4 +1,4 @@
-<div class='video-player {{ "loading" if autoplay else '' }}'>
+<div class='video-player {% if autoplay %}loading{% endif %}'>
   <div class='video-wrap'>
     <video preload='none'
            {% if preload != 'none' %} data-preload='{{ preload }}'{% endif %}
