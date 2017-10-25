@@ -1,14 +1,12 @@
-$video-background: #000 !default;
-$video-controls-background: transparent !default;
-$video-controls-color: #fff !default;
-$video-controls-active-color: transparentize(#fff, .2) !default;
-$video-progress-track-background: $video-background !default;
-$video-progress-thumb-color: $video-controls-color !default;
+$videoplayer-background: #000 !default;
+$videoplayer-controls-background: transparent !default;
+$videoplayer-controls-color: #fff !default;
+$videoplayer-controls-active-color: transparentize(#fff, .2) !default;
+$videoplayer-progress-track-background: $videoplayer-background !default;
+$videoplayer-progress-thumb-color: $videoplayer-controls-color !default;
 
-$tablet-max: 1280px !default;  // Samsung Galaxy Note etc
-$desktop-min: $tablet-max + 1px;
-$phone-max: 667px !default; // Portrait iPhone6
-$tablet-min: $phone-max + 1px;
+$videoplayer-phone-max: 667px !default; // Portrait iPhone6
+$videoplayer-tablet-min: $videoplayer-phone-max + 1px;
 
 $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
 
@@ -109,7 +107,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     left: 0;
     width: 100%;
     top: 0;
-    background: $video-background;
+    background: $videoplayer-background;
     visibility: hidden;
 
     .no-js & {
@@ -126,13 +124,13 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     visibility: inherit;
     z-index: 2;
     cursor: pointer;
-    background: $video-background;
+    background: $videoplayer-background;
 
-    @media screen and (min-width: $tablet-min) {
+    @media screen and (min-width: $videoplayer-tablet-min) {
       position: relative;
     }
 
-    @media screen and (max-width: $phone-max) {
+    @media screen and (max-width: $videoplayer-phone-max) {
       position: static;
     }
 
@@ -146,11 +144,11 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       margin-top: 10px;
       font-size: 15px;
 
-      @media screen and (min-width: $tablet-min) {
+      @media screen and (min-width: $videoplayer-tablet-min) {
         position: absolute;  // to .image / .poster
       }
 
-      @media screen and (max-width: $phone-max) {
+      @media screen and (max-width: $videoplayer-phone-max) {
         position: absolute;  // to .video-wrap
       }
     }
@@ -159,8 +157,8 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
   .playpause {
     position: absolute;
     z-index: 3;
-    color: $video-controls-color;
-    border-color: $video-controls-color;
+    color: $videoplayer-controls-color;
+    border-color: $videoplayer-controls-color;
     outline: none;
     background: transparent;
     left: 50%;
@@ -169,7 +167,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     opacity: 1;
     visibility: inherit;
 
-    @media screen and (min-width: $tablet-min) {
+    @media screen and (min-width: $videoplayer-tablet-min) {
       border: 3px solid;
       height: 70px;
       width: 70px;
@@ -177,7 +175,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       margin-top: -35px;
     }
 
-    @media screen and (max-width: $phone-max) {
+    @media screen and (max-width: $videoplayer-phone-max) {
       border: 2px solid;
       height: 50px;
       width: 50px;
@@ -186,11 +184,11 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     }
 
     .no-touchevents &:hover {
-      color: $video-controls-active-color;
-      border-color: $video-controls-active-color;
+      color: $videoplayer-controls-active-color;
+      border-color: $videoplayer-controls-active-color;
 
       .symbol {
-        fill: $video-controls-active-color;
+        fill: $videoplayer-controls-active-color;
       }
     }
 
@@ -199,14 +197,14 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       top: 50%;
       left: 50%;
 
-      @media screen and (min-width: $tablet-min) {
+      @media screen and (min-width: $videoplayer-tablet-min) {
         width: 30px;
         height: 30px;
         margin-left: -14px;
         margin-top: -15px;
       }
 
-      @media screen and (max-width: $phone-max) {
+      @media screen and (max-width: $videoplayer-phone-max) {
         width: 20px;
         height: 20px;
         margin-left: -9px;
@@ -214,14 +212,14 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       }
 
       .symbol {
-        fill: $video-controls-color;
+        fill: $videoplayer-controls-color;
       }
     }
   }
 
   .video-controls {
     position: absolute;
-    background: $video-controls-background;
+    background: $videoplayer-controls-background;
     height: 32px;
     bottom: 5px;
     padding: 2px 5px 5px 0;
@@ -244,15 +242,15 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       border: 0;
       outline: 0;
       font-size: inherit;
-      color: $video-controls-color;
-      border-color: $video-controls-color;
+      color: $videoplayer-controls-color;
+      border-color: $videoplayer-controls-color;
 
       .no-touchevents &:hover {
-        color: $video-controls-active-color;
-        border-color: $video-controls-active-color;
+        color: $videoplayer-controls-active-color;
+        border-color: $videoplayer-controls-active-color;
 
         .symbol {
-          fill: $video-controls-active-color;
+          fill: $videoplayer-controls-active-color;
         }
       }
     }
@@ -265,8 +263,8 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       // clear defaults
       -webkit-appearance: none;
       outline: none;
-      background: $video-controls-background;  // fallback, see videoplayer.js
-      color: $video-controls-color;
+      background: $videoplayer-controls-background;  // fallback, see videoplayer.js
+      color: $videoplayer-controls-color;
       display: inline-block;
       vertical-align: top;
       height: 3px;
@@ -284,8 +282,8 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
         height: 10px;
         margin-top: -3px;
         border-radius: 50%;
-        background: $video-controls-color;
-        color: $video-controls-color;
+        background: $videoplayer-controls-color;
+        color: $videoplayer-controls-color;
       }
 
       @include videoplayer-range-track {
@@ -318,7 +316,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
         }
 
         .symbol {
-          fill: $video-controls-color;
+          fill: $videoplayer-controls-color;
         }
       }
     }
@@ -338,7 +336,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       }
 
       .symbol {
-        fill: $video-controls-color;
+        fill: $videoplayer-controls-color;
       }
     }
   }
@@ -351,7 +349,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     position: absolute;
     bottom: 0;
     visibility: hidden;
-    background-color: $video-controls-background;
+    background-color: $videoplayer-controls-background;
     overflow: hidden;
   }
 
@@ -396,8 +394,8 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       width: 20px;
       height: $progress-bar-height;
       margin-left: -10px;
-      background: $video-controls-color;
-      color: $video-controls-color;
+      background: $videoplayer-controls-color;
+      color: $videoplayer-controls-color;
     }
   }
 
@@ -414,7 +412,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       // width set with js
       top: 0;
       height: $progress-bar-height;
-      background: $video-controls-active-color;
+      background: $videoplayer-controls-active-color;
       cursor: pointer;
     }
   }
@@ -447,7 +445,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       opacity: .75;
 
       .no-touchevents &:hover {
-        color: $video-controls-color;
+        color: $videoplayer-controls-color;
       }
 
       &:before {
@@ -460,21 +458,21 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
         animation: loading .8s infinite linear;
         border-radius: 50%;
 
-        @media screen and (min-width: $tablet-min) {
+        @media screen and (min-width: $videoplayer-tablet-min) {
           height: 25px;
           width: 25px;
           margin-left: -12.5px;
           margin-top: -12.5px;
-          border: 4px solid $video-controls-color;
+          border: 4px solid $videoplayer-controls-color;
           border-right-color: transparent;
         }
 
-        @media screen and (max-width: $phone-max) {
+        @media screen and (max-width: $videoplayer-phone-max) {
           height: 20px;
           width: 20px;
           margin-left: -10px;
           margin-top: -10px;
-          border: 2px solid $video-controls-color;
+          border: 2px solid $videoplayer-controls-color;
           border-right-color: transparent;
         }
       }
