@@ -111,6 +111,7 @@ export class VideoPlayer {
         (this.autoplayData === true ||
          this.autoplayData === 'canplaythrough')) {
       this.videoWrapper.classList.add('loading');
+      this.callStateChangeHandler('loading');
     }
 
     this.videoStateTracking();
@@ -130,6 +131,8 @@ export class VideoPlayer {
         getWindowWidth() > this.options.phoneMax) {
       this.preload = 'auto';
     }
+
+    this.callHandler('initialised');
 
     if (this.preload !== 'none') {
       this.loadVideo(this.preload);
@@ -158,6 +161,15 @@ export class VideoPlayer {
     }
   }
 
+  callHandler (eventName) {
+    this.options.handlers && this.options.handlers[eventName] &&
+      this.options.handlers[eventName]();
+  }
+
+  callStateChangeHandler (newStateName) {
+    this.options.statechange && this.options.statechange(newStateName);
+  }
+
   /**
    * Assigns handlers to add / remove the following (self-explanatory) classes
    * to / from videoWrapper:
@@ -182,26 +194,30 @@ export class VideoPlayer {
         this.videoWrapper.classList.remove(className);
       }
 
+      // We only set loading state here if we're delaying playback until we can
+      // play through, to avoid any brief flash of the loading state prior to
+      // playing.
       if ((this.autoplayData === true ||
           this.autoplayData === 'canplaythrough') &&
           getWindowWidth() > this.options.phoneMax) {
         this.videoWrapper.classList.add('loading');
+        this.callStateChangeHandler('loading');
       }
 
-      this.options.loadStart && this.options.loadStart();
+      this.callHandler('loadstart');
     });
 
     this.video.addEventListener('loadedmetadata', () => {
       this.videoWrapper.classList.add('metadata-loaded');
 
-      this.options.loadedmetadata && this.options.loadedmetadata();
+      this.callHandler('loadedmetadata');
     });
 
     this.video.addEventListener('canplay', () => {
       this.videoWrapper.classList.remove('loading');
       this.videoWrapper.classList.add('canplay');
 
-      this.options.canplay && this.options.canplay();
+      this.callHandler('canplay');
 
       if (this.autoplayData === true &&
           getWindowWidth() > this.options.phoneMax) {
@@ -213,7 +229,7 @@ export class VideoPlayer {
       this.videoWrapper.classList.remove('loading');
       this.videoWrapper.classList.add('canplaythrough');
 
-      this.options.canplaythrough && this.options.canplaythrough();
+      this.callHandler('canplaythrough');
 
       if (this.autoplayData === 'canplaythrough' &&
           getWindowWidth() > this.options.phoneMax) {
@@ -226,13 +242,13 @@ export class VideoPlayer {
       this.videoWrapper.classList.remove('loading');
       this.videoWrapper.classList.remove('paused');
 
-      this.options.playing && this.options.playing();
+      this.callHandler('playing');
     });
 
     this.video.addEventListener('pause', () => {
       this.videoWrapper.classList.add('paused');
       this.videoWrapper.classList.remove('playing');
-      this.options.pause && this.options.pause();
+      this.callHandler('pause');
     });
 
     this.video.addEventListener('ended', () => {
@@ -241,7 +257,8 @@ export class VideoPlayer {
       this.videoWrapper.classList.remove('player-paused');
       this.videoWrapper.classList.remove('player-playing');
       this.toggleFullscreen(false);
-      this.options.ended && this.options.ended();
+      this.callHandler('ended');
+      this.callStateChangeHandler('base');
     });
 
     this.video.addEventListener('volumechange', () => {
@@ -250,55 +267,55 @@ export class VideoPlayer {
       } else {
         this.videoWrapper.classList.remove('muted');
       }
-      this.options.volumechange && this.options.volumechange();
+      this.callHandler('volumechange');
     });
 
     this.video.addEventListener('loadeddata', () => {
-      this.options.loadeddata && this.options.loadeddata();
+      this.callHandler('loadeddata');
     });
 
     this.video.addEventListener('progress', () => {
-      this.options.progress && this.options.progress();
+      this.callHandler('progress');
     });
 
     this.video.addEventListener('suspend', () => {
-      this.options.suspend && this.options.suspend();
+      this.callHandler('suspend');
     });
 
     this.video.addEventListener('abort', () => {
-      this.options.abort && this.options.abort();
+      this.callHandler('abort');
     });
 
     this.video.addEventListener('error', () => {
-      this.options.error && this.options.error();
+      this.callHandler('error');
     });
 
     this.video.addEventListener('emptied', () => {
-      this.options.emptied && this.options.emptied();
+      this.callHandler('emptied');
     });
 
     this.video.addEventListener('stalled', () => {
-      this.options.stalled && this.options.stalled();
+      this.callHandler('stalled');
     });
 
     this.video.addEventListener('waiting', () => {
-      this.options.waiting && this.options.waiting();
+      this.callHandler('waiting');
     });
 
     this.video.addEventListener('seeking', () => {
-      this.options.seeking && this.options.seeking();
+      this.callHandler('seeking');
     });
 
     this.video.addEventListener('seeked', () => {
-      this.options.seeked && this.options.seeked();
+      this.callHandler('seeked');
     });
 
     this.video.addEventListener('durationchange', () => {
-      this.options.durationchange && this.options.durationchange();
+      this.callHandler('durationchange');
     });
 
     this.video.addEventListener('play', () => {
-      this.options.play && this.options.play();
+      this.callHandler('play');
     });
 
     if (this.controls && this.controls.length) {
@@ -339,7 +356,7 @@ export class VideoPlayer {
           this.videoWrapper.classList.remove('fullscreen');
           document.body.classList.remove('fullscreened-element');
         }
-        this.options.fullscreenchange && this.options.fullscreenchange();
+        this.callHandler('fullscreenchange');
       }
     });
 
@@ -357,7 +374,7 @@ export class VideoPlayer {
           this.videoWrapper.classList.remove('fullscreen');
           document.body.classList.remove('fullscreened-element');
         }
-        this.options.fullscreenchange && this.options.fullscreenchange();
+        this.callHandler('fullscreenchange');
       }
     });
 
@@ -371,7 +388,7 @@ export class VideoPlayer {
           this.videoWrapper.classList.remove('fullscreen');
           document.body.classList.remove('fullscreened-element');
         }
-        this.options.fullscreenchange && this.options.fullscreenchange();
+        this.callHandler('fullscreenchange');
       }
     });
 
@@ -385,7 +402,7 @@ export class VideoPlayer {
           this.videoWrapper.classList.remove('fullscreen');
           document.body.classList.remove('fullscreened-element');
         }
-        this.options.fullscreenchange && this.options.fullscreenchange();
+        this.callHandler('fullscreenchange');
       }
     });
   }
@@ -558,7 +575,7 @@ export class VideoPlayer {
           Math.floor((this.video.currentTime / this.video.duration) * 100) + '%';
       }
 
-      this.options.timeupdate && this.options.timeupdate();
+      this.callHandler('timeupdate');
     });
   }
 
@@ -604,6 +621,7 @@ export class VideoPlayer {
     for (let className of classNames) {
       this.videoWrapper.classList.remove(className);
     }
+    this.callStateChangeHandler('base');
   }
 
   /**
@@ -626,6 +644,7 @@ export class VideoPlayer {
     // style.
     this.videoWrapper.classList.add('player-playing');
     this.videoWrapper.classList.remove('player-paused');
+    this.callStateChangeHandler('player-playing');
   }
 
   /**
@@ -637,6 +656,7 @@ export class VideoPlayer {
     this.video.pause();
     this.videoWrapper.classList.add('player-paused');
     this.videoWrapper.classList.remove('player-playing');
+    this.callStateChangeHandler('playing-paused');
   }
 
   /**
@@ -731,6 +751,7 @@ export class VideoPlayer {
 
     if (play) {
       this.videoWrapper.classList.add('loading');
+      this.callStateChangeHandler('loading');
     }
 
     for (let source of this.sources) {
