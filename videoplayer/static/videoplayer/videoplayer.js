@@ -187,15 +187,21 @@ export class VideoPlayer {
           getWindowWidth() > this.options.phoneMax) {
         this.videoWrapper.classList.add('loading');
       }
+
+      this.options.loadStart && this.options.loadStart();
     });
 
     this.video.addEventListener('loadedmetadata', () => {
       this.videoWrapper.classList.add('metadata-loaded');
+
+      this.options.loadedmetadata && this.options.loadedmetadata();
     });
 
     this.video.addEventListener('canplay', () => {
       this.videoWrapper.classList.remove('loading');
       this.videoWrapper.classList.add('canplay');
+
+      this.options.canplay && this.options.canplay();
 
       if (this.autoplayData === true &&
           getWindowWidth() > this.options.phoneMax) {
@@ -207,6 +213,8 @@ export class VideoPlayer {
       this.videoWrapper.classList.remove('loading');
       this.videoWrapper.classList.add('canplaythrough');
 
+      this.options.canplaythrough && this.options.canplaythrough();
+
       if (this.autoplayData === 'canplaythrough' &&
           getWindowWidth() > this.options.phoneMax) {
         this.play();
@@ -217,11 +225,14 @@ export class VideoPlayer {
       this.videoWrapper.classList.add('playing');
       this.videoWrapper.classList.remove('loading');
       this.videoWrapper.classList.remove('paused');
+
+      this.options.playing && this.options.playing();
     });
 
     this.video.addEventListener('pause', () => {
       this.videoWrapper.classList.add('paused');
       this.videoWrapper.classList.remove('playing');
+      this.options.pause && this.options.pause();
     });
 
     this.video.addEventListener('ended', () => {
@@ -230,6 +241,7 @@ export class VideoPlayer {
       this.videoWrapper.classList.remove('player-paused');
       this.videoWrapper.classList.remove('player-playing');
       this.toggleFullscreen(false);
+      this.options.ended && this.options.ended();
     });
 
     this.video.addEventListener('volumechange', () => {
@@ -238,6 +250,55 @@ export class VideoPlayer {
       } else {
         this.videoWrapper.classList.remove('muted');
       }
+      this.options.volumechange && this.options.volumechange();
+    });
+
+    this.video.addEventListener('loadeddata', () => {
+      this.options.loadeddata && this.options.loadeddata();
+    });
+
+    this.video.addEventListener('progress', () => {
+      this.options.progress && this.options.progress();
+    });
+
+    this.video.addEventListener('suspend', () => {
+      this.options.suspend && this.options.suspend();
+    });
+
+    this.video.addEventListener('abort', () => {
+      this.options.abort && this.options.abort();
+    });
+
+    this.video.addEventListener('error', () => {
+      this.options.error && this.options.error();
+    });
+
+    this.video.addEventListener('emptied', () => {
+      this.options.emptied && this.options.emptied();
+    });
+
+    this.video.addEventListener('stalled', () => {
+      this.options.stalled && this.options.stalled();
+    });
+
+    this.video.addEventListener('waiting', () => {
+      this.options.waiting && this.options.waiting();
+    });
+
+    this.video.addEventListener('seeking', () => {
+      this.options.seeking && this.options.seeking();
+    });
+
+    this.video.addEventListener('seeked', () => {
+      this.options.seeked && this.options.seeked();
+    });
+
+    this.video.addEventListener('durationchange', () => {
+      this.options.durationchange && this.options.durationchange();
+    });
+
+    this.video.addEventListener('play', () => {
+      this.options.play && this.options.play();
     });
 
     if (this.controls && this.controls.length) {
@@ -278,6 +339,7 @@ export class VideoPlayer {
           this.videoWrapper.classList.remove('fullscreen');
           document.body.classList.remove('fullscreened-element');
         }
+        this.options.fullscreenchange && this.options.fullscreenchange();
       }
     });
 
@@ -295,6 +357,7 @@ export class VideoPlayer {
           this.videoWrapper.classList.remove('fullscreen');
           document.body.classList.remove('fullscreened-element');
         }
+        this.options.fullscreenchange && this.options.fullscreenchange();
       }
     });
 
@@ -308,6 +371,7 @@ export class VideoPlayer {
           this.videoWrapper.classList.remove('fullscreen');
           document.body.classList.remove('fullscreened-element');
         }
+        this.options.fullscreenchange && this.options.fullscreenchange();
       }
     });
 
@@ -321,6 +385,7 @@ export class VideoPlayer {
           this.videoWrapper.classList.remove('fullscreen');
           document.body.classList.remove('fullscreened-element');
         }
+        this.options.fullscreenchange && this.options.fullscreenchange();
       }
     });
   }
@@ -492,6 +557,8 @@ export class VideoPlayer {
         fallbackProgressBar.style.width =
           Math.floor((this.video.currentTime / this.video.duration) * 100) + '%';
       }
+
+      this.options.timeupdate && this.options.timeupdate();
     });
   }
 
