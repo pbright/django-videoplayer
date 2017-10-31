@@ -469,10 +469,12 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
   &.videoplayer-playing {
     // becomes a pointer when the user takes some activity (ie. cursor disappears
     // when watching if it's not being used).
-    cursor: none;
+    &.has-custom-controls {
+      cursor: none;
+    }
 
     &.user-activity {
-      cursor: default;
+      cursor: pointer;
 
       .playpause {
         opacity: 1;

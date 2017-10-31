@@ -169,7 +169,7 @@ export class VideoPlayer {
    */
   callHandler (eventName) {
     this.options.handlers && this.options.handlers[eventName] &&
-      this.options.handlers[eventName]();
+      this.options.handlers[eventName].call(this);
   }
 
   /**
@@ -178,15 +178,15 @@ export class VideoPlayer {
    */
   changeState (newState) {
     this.state = newState;
-    this.options.statechange && this.options.statechange();
+    this.options.statechange && this.options.statechange.call(this);
   }
 
   /**
    * Assigns handlers to add / remove the following (self-explanatory) classes
    * to / from videoWrapper:
    *
-   * playing
-   * paused
+   * videoplayer-playing
+   * videoplayer-paused
    * metadata-loaded
    * loaded
    * canplay
