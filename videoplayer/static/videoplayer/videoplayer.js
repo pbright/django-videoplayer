@@ -50,6 +50,12 @@ function addListenerMulti (el, s, fn) {
 let nextPlayerId = 1;
 const LOADED_VIDEOS = [];
 
+const INITIAL_STATE = 1;
+const LOADING_STATE = 2;
+const PLAYING_STATE = 3;
+const PAUSED_STATE = 4;
+const ENDED_STATE = 5;
+
 /**
   * @class ScrollableCarousel
   *
@@ -83,7 +89,13 @@ export class VideoPlayer {
       progressLowerColor: 'currentColor',
       volumeUpperColor: 'currentColor',
       volumeLowerColor: 'currentColor',
-      phoneMax: 667
+      phoneMax: 667,
+      // We don't use the actual autoplay attribute so that we can support
+      // autoplay on canplaythrough
+      autoplay: this.video.dataset.autoplay === 'true',
+      // We don't use the actual preload attribute, see README.md.
+      preload: this.video.dataset.preload || 'none'
+
     };
 
     this.options = extendObject(defaultOptions, opts);
@@ -91,28 +103,16 @@ export class VideoPlayer {
     this.id = nextPlayerId++;
     this.sources = this.video.getElementsByTagName('source');
     this.posters = this.videoWrapper.getElementsByClassName('image');
-    this.playpauseControls = this.videoWrapper.getElementsByClassName('playpause');
+    this.playpauseControls =
+      this.videoWrapper.getElementsByClassName('playpause');
     this.controls = this.videoWrapper.getElementsByClassName('video-controls');
-    this.fallbackProgresses = this.videoWrapper.getElementsByClassName('fallback-progress');
-    this.fallbackProgressBars = this.videoWrapper.getElementsByClassName('fallback-progress-bar');
-    this.progressBars = this.videoWrapper.getElementsByClassName('progress-bar');
+    this.fallbackProgresses =
+      this.videoWrapper.getElementsByClassName('fallback-progress');
+    this.fallbackProgressBars =
+      this.videoWrapper.getElementsByClassName('fallback-progress-bar');
+    this.progressBars =
+      this.videoWrapper.getElementsByClassName('progress-bar');
     this.volumeBars = this.videoWrapper.getElementsByClassName('volume-bar');
-
-    this.autoplayProp = this.video.getAttribute('autoplay');
-    this.autoplayData = this.video.dataset.autoplay;
-    // We don't use the actual preload attribute, see README.md.
-    this.preload = this.video.dataset.preload || 'none';
-
-    if (this.autoplayData === 'true') {
-      this.autoplayData = true;
-    }
-
-    if (getWindowWidth() > this.options.phoneMax &&
-        (this.autoplayData === true ||
-         this.autoplayData === 'canplaythrough')) {
-      this.videoWrapper.classList.add('loading');
-      this.callStateChangeHandler('loading');
-    }
 
     this.videoStateTracking();
     this.fullscreenStateTracking();
@@ -125,17 +125,19 @@ export class VideoPlayer {
       this.video.controls = false;
     }
 
-    // If the video is to autoplay, enforce preload auto.
-    if ((this.autoplayData === true ||
-         this.autoplayData === 'canplaythrough') &&
+    if ((this.options.autoplay === true ||
+         this.options.autoplay === 'canplaythrough') &&
         getWindowWidth() > this.options.phoneMax) {
-      this.preload = 'auto';
+      this.videoWrapper.classList.add('videoplayer-loading');
+      this.changeState(LOADING_STATE);
+      // If the video is to autoplay, enforce preload auto.
+      this.options.preload = 'auto';
     }
 
     this.callHandler('initialised');
 
-    if (this.preload !== 'none') {
-      this.loadVideo(this.preload);
+    if (this.options.preload !== 'none') {
+      this.loadVideo(this.options.preload);
     }
   }
 
@@ -161,13 +163,22 @@ export class VideoPlayer {
     }
   }
 
+  /**
+   * @method VideoPlayer#callHandler
+   * @param {string} eventName
+   */
   callHandler (eventName) {
     this.options.handlers && this.options.handlers[eventName] &&
       this.options.handlers[eventName]();
   }
 
-  callStateChangeHandler (newStateName) {
-    this.options.statechange && this.options.statechange(newStateName);
+  /**
+   * @method VideoPlayer#changeState
+   * @param {int} newState
+   */
+  changeState (newState) {
+    this.state = newState;
+    this.options.statechange && this.options.statechange();
   }
 
   /**
@@ -188,8 +199,8 @@ export class VideoPlayer {
   videoStateTracking () {
     this.video.addEventListener('loadstart', () => {
       const classList =
-        ['playing', 'paused', 'metadata-loaded', 'loaded', 'canplay',
-          'canplaythrough'];
+        ['videoplayer-playing', 'videoplayer-paused', 'metadata-loaded',
+         'loaded', 'canplay', 'canplaythrough'];
       for (let className of classList) {
         this.videoWrapper.classList.remove(className);
       }
@@ -197,11 +208,11 @@ export class VideoPlayer {
       // We only set loading state here if we're delaying playback until we can
       // play through, to avoid any brief flash of the loading state prior to
       // playing.
-      if ((this.autoplayData === true ||
-          this.autoplayData === 'canplaythrough') &&
+      if ((this.options.autoplay === true ||
+          this.options.autoplay === 'canplaythrough') &&
           getWindowWidth() > this.options.phoneMax) {
-        this.videoWrapper.classList.add('loading');
-        this.callStateChangeHandler('loading');
+        this.videoWrapper.classList.add('videoplayer-loading');
+        this.changeState(LOADING_STATE);
       }
 
       this.callHandler('loadstart');
@@ -214,51 +225,51 @@ export class VideoPlayer {
     });
 
     this.video.addEventListener('canplay', () => {
-      this.videoWrapper.classList.remove('loading');
       this.videoWrapper.classList.add('canplay');
 
       this.callHandler('canplay');
 
-      if (this.autoplayData === true &&
-          getWindowWidth() > this.options.phoneMax) {
+      if (this.options.autoplay === true &&
+          getWindowWidth() > this.options.phoneMax &&
+          this.state < PLAYING_STATE) {
         this.play();
       }
     });
 
     this.video.addEventListener('canplaythrough', () => {
-      this.videoWrapper.classList.remove('loading');
+      this.videoWrapper.classList.remove('videoplayer-loading');
       this.videoWrapper.classList.add('canplaythrough');
 
       this.callHandler('canplaythrough');
 
-      if (this.autoplayData === 'canplaythrough' &&
+      if (this.options.autoplay === 'canplaythrough' &&
           getWindowWidth() > this.options.phoneMax) {
         this.play();
       }
     });
 
     this.video.addEventListener('playing', () => {
-      this.videoWrapper.classList.add('playing');
-      this.videoWrapper.classList.remove('loading');
-      this.videoWrapper.classList.remove('paused');
+      this.videoWrapper.classList.remove('videoplayer-loading');
+      this.videoWrapper.classList.add('videoplayer-playing');
+      this.videoWrapper.classList.remove('videoplayer-paused');
 
       this.callHandler('playing');
     });
 
     this.video.addEventListener('pause', () => {
-      this.videoWrapper.classList.add('paused');
-      this.videoWrapper.classList.remove('playing');
+      this.videoWrapper.classList.remove('videoplayer-loading');
+      this.videoWrapper.classList.add('videoplayer-paused');
+      this.videoWrapper.classList.remove('videoplayer-playing');
+
       this.callHandler('pause');
     });
 
     this.video.addEventListener('ended', () => {
-      this.videoWrapper.classList.remove('paused');
-      this.videoWrapper.classList.remove('playing');
-      this.videoWrapper.classList.remove('player-paused');
-      this.videoWrapper.classList.remove('player-playing');
+      this.videoWrapper.classList.remove('videoplayer-paused');
+      this.videoWrapper.classList.remove('videoplayer-playing');
       this.toggleFullscreen(false);
       this.callHandler('ended');
-      this.callStateChangeHandler('base');
+      this.changeState(ENDED_STATE);
     });
 
     this.video.addEventListener('volumechange', () => {
@@ -424,7 +435,8 @@ export class VideoPlayer {
       const lower = this.options.progressLowerColor;
       const upper = this.options.progressUpperColor;
       addListenerMulti(progressBar, 'input change', () => {
-        const position = progressBar.value / progressBar.getAttribute('max') * 100;
+        const position = progressBar.value / progressBar.getAttribute('max') *
+                         100;
         progressBar.style.background =
           'linear-gradient(to right, ' + lower + ' 0%, ' +
                            lower + ' ' + position + '%, ' +
@@ -434,10 +446,10 @@ export class VideoPlayer {
       triggerEvent(progressBar, 'input');
 
       // Pause playback if user is adjusting playback position.
-      progressBar.addEventListener('mousedown', () => {
-        this.videoWrapper.classList.add('scrubbing');
-        this.video.pause();
-      });
+      // progressBar.addEventListener('mousedown', () => {
+      //   this.videoWrapper.classList.add('scrubbing');
+      //   this.video.pause();
+      // });
 
       // Use input not change as we'll be triggering change programatically.
       // Also this way it updates as the user slides, not only at the end.
@@ -448,10 +460,10 @@ export class VideoPlayer {
       });
 
       // Resume playback when progress bar released.
-      progressBar.addEventListener('mouseup', () => {
-        this.videoWrapper.classList.remove('scrubbing');
-        this.video.play();
-      });
+      // progressBar.addEventListener('mouseup', () => {
+      //   this.videoWrapper.classList.remove('scrubbing');
+      //   this.video.play();
+      // });
     }
 
     for (let volumeBar of this.volumeBars) {
@@ -471,6 +483,11 @@ export class VideoPlayer {
         this.video.volume = volumeBar.value;
       });
     }
+
+    this.video.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.playpause();
+    });
 
     for (let poster of this.posters) {
       poster.addEventListener('click', (e) => {
@@ -535,9 +552,11 @@ export class VideoPlayer {
         const pos = (e.pageX - boundingRect.left) / boundingRect.width;
         this.video.currentTime = pos * this.video.duration;
         for (let fallbackProgressBar of
-             fallbackProgress.getElementsByClassName('fallback-progress-bar')) {
+             fallbackProgress.getElementsByClassName(
+               'fallback-progress-bar')) {
           fallbackProgressBar.style.width =
-            Math.floor((this.video.currentTime / this.video.duration) * 100) + '%';
+            Math.floor((this.video.currentTime /
+                        this.video.duration) * 100) + '%';
         }
       });
     }
@@ -572,7 +591,8 @@ export class VideoPlayer {
 
       for (let fallbackProgressBar of this.fallbackProgressBars) {
         fallbackProgressBar.style.width =
-          Math.floor((this.video.currentTime / this.video.duration) * 100) + '%';
+          Math.floor((this.video.currentTime /
+                      this.video.duration) * 100) + '%';
       }
 
       this.callHandler('timeupdate');
@@ -617,11 +637,11 @@ export class VideoPlayer {
     this.teardown();
 
     const classNames = ['metadata-loaded', 'canplay', 'canplaythrough',
-      'player-paused', 'paused', 'player-playing', 'playing'];
+      'videoplayer-paused', 'videoplayer-playing'];
     for (let className of classNames) {
       this.videoWrapper.classList.remove(className);
     }
-    this.callStateChangeHandler('base');
+    this.changeState(INITIAL_STATE);
   }
 
   /**
@@ -631,20 +651,12 @@ export class VideoPlayer {
    */
   play () {
     if (this.video.readyState === 0) {
+      this.videoWrapper.classList.add('videoplayer-loading');
       this.loadVideo();
     }
 
     this.video.play();
-    this.videoWrapper.classList.remove('loading');
-    // Frequently we may need to differentiate between the video playing, and
-    // the video playing due to this module's play / pause methods being
-    // called. For example, when changing the video location via the
-    // progress bar, the video is temporarily paused (without using these
-    // functions), and it is unlikely we want this to be reflected in our
-    // style.
-    this.videoWrapper.classList.add('player-playing');
-    this.videoWrapper.classList.remove('player-paused');
-    this.callStateChangeHandler('player-playing');
+    this.changeState(PLAYING_STATE);
   }
 
   /**
@@ -654,9 +666,7 @@ export class VideoPlayer {
    */
   pause () {
     this.video.pause();
-    this.videoWrapper.classList.add('player-paused');
-    this.videoWrapper.classList.remove('player-playing');
-    this.callStateChangeHandler('playing-paused');
+    this.changeState(PAUSED_STATE);
   }
 
   /**
@@ -665,7 +675,7 @@ export class VideoPlayer {
    * @method VideoPlayer#playpause
    */
   playpause () {
-    if (this.videoWrapper.classList.contains('playing')) {
+    if (this.state === PLAYING_STATE) {
       this.pause();
     } else {
       this.play();
@@ -742,7 +752,7 @@ export class VideoPlayer {
    * Note that this function does not alter the poster.
    *
    * @method VideoPlayer#replaceSrc
-   * @param {Object} data - {sources: [{source: '...', mobileSource: '...'}, ...]}
+   * @param {Object} data - {sources: [{source: '', mobileSource: ''}, ...]}
    * @param {string} play - whether to play the video immediately after loading
    */
   replaceSrc (data, play) {
@@ -750,8 +760,8 @@ export class VideoPlayer {
     this.unloadVideo();
 
     if (play) {
-      this.videoWrapper.classList.add('loading');
-      this.callStateChangeHandler('loading');
+      this.videoWrapper.classList.add('videoplayer-loading');
+      this.changeState(LOADING_STATE);
     }
 
     for (let source of this.sources) {

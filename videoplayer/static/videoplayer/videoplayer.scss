@@ -71,6 +71,8 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
 
   &.has-custom-controls {
     video {
+      cursor: pointer;
+
       &::-webkit-media-controls-panel {
         display: none;
         -webkit-appearance: none;
@@ -416,31 +418,12 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       cursor: pointer;
     }
   }
-
-  // STATES
 }
 
+// STATES
+
 .video-player {
-  &.loading {
-    .image,
-    .poster {
-      cursor: default;
-
-      > * {
-        opacity: .5;
-        // Firefox 10-34
-        filter: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='grayscale'><feColorMatrix type='saturate' values='0'/></filter></svg>#grayscale");
-        // Chrome 19+, Safari 6+, Safari 6+ iOS, Opera 15+
-        -webkit-filter: grayscale(100%);
-        // Firefox 35+
-        filter: grayscale(100%);
-        // IE 6-9
-        filter: gray;
-      }
-    }
-  }
-
-  &.loading {
+  &.videoplayer-loading {
     .playpause {
       opacity: .75;
 
@@ -483,7 +466,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     }
   }
 
-  &.playing {
+  &.videoplayer-playing {
     // becomes a pointer when the user takes some activity (ie. cursor disappears
     // when watching if it's not being used).
     cursor: none;
@@ -549,7 +532,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     }
   }
 
-  &.paused {
+  &.videoplayer-paused {
     video {
       visibility: inherit;
     }
@@ -570,12 +553,12 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     }
   }
 
-  &.scrubbing {
-    .playpause {
-      opacity: 0;
-      visibility: hidden;
-    }
-  }
+  // &.scrubbing {
+  //   .playpause {
+  //     opacity: 0;
+  //     visibility: hidden;
+  //   }
+  // }
 
   &.muted {
     .video-controls .mute {
