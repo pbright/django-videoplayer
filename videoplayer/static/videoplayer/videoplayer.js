@@ -57,7 +57,7 @@ const PAUSED_STATE = 4;
 const ENDED_STATE = 5;
 
 /**
-  * @class ScrollableCarousel
+  * @class VideoPlayer
   *
   * Lightweight HTML5 video player.
   *
