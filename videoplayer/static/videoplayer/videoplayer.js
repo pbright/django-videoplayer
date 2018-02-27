@@ -358,8 +358,8 @@ export class VideoPlayer {
    */
   fullscreenStateTracking () {
     document.addEventListener('fullscreenchange', (e) => {
-      if (this.videoWrapper.is(target)) {
       const target = e.target || e.srcElement
+      if (this.videoWrapper === target) {
         if (document.fullScreen || document.fullscreenElement) {
           this.videoWrapper.classList.add('fullscreen')
           document.body.classList.add('fullscreened-element')
@@ -376,8 +376,8 @@ export class VideoPlayer {
     })
 
     document.addEventListener('webkitfullscreenchange', (e) => {
-      if (this.videoWrapper.is(target)) {
       const target = e.target || e.srcElement
+      if (this.videoWrapper === target) {
         if (document.webkitIsFullScreen) {
           this.videoWrapper.classList.add('fullscreen')
           document.body.classList.add('fullscreened-element')
@@ -390,8 +390,8 @@ export class VideoPlayer {
     })
 
     document.addEventListener('mozfullscreenchange', (e) => {
-      if (this.videoWrapper.is(target)) {
       const target = e.target || e.srcElement
+      if (this.videoWrapper === target) {
         if (document.mozFullScreen) {
           this.videoWrapper.classList.add('fullscreen')
           document.body.classList.add('fullscreened-element')
@@ -404,8 +404,8 @@ export class VideoPlayer {
     })
 
     document.addEventListener('msfullscreenchange', (e) => {
-      if (this.videoWrapper.is(target)) {
       const target = e.target || e.srcElement
+      if (this.videoWrapper === target) {
         if (document.msFullscreenElement) {
           this.videoWrapper.classList.add('fullscreen')
           document.body.classList.add('fullscreened-element')
