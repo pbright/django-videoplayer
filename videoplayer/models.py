@@ -25,13 +25,10 @@ def get_file_type(path):
 
 class AbstractVideo(models.Model):
     """
-    Abstract parent class for a video, which requires the child class to
-    provide either:
-    1. A source field, and optionally mobile_source field; or (to support
-    multiple sources)
-    2. A sources attribute returning a queryset of model instances each with a
-    source field, and optionally mobile_source field. An AbstractVideoSource
-    class is provided for this purpose.
+    Abstract parent class for a video. Requires the child class to either
+    define get_source, get_mobile_source, and get_type methods, or to define
+    a get_sources method that return an iterable of objects each of which
+    has those methods.
 
     This class provides:
     1. Defaults for the following video element properties, which can be
@@ -70,16 +67,21 @@ class AbstractVideo(models.Model):
         muted = models.BooleanField(default=True)
 
         @property
-        def type(self):
-            return 'video/%s' % get_file_type(self.source.url)
-
-        @property
         def autoplay(self):
             return True
 
         @property
         def controls(self):
             return False
+
+        def get_source(self):
+            return self.source.url
+
+        def get_mobile_source(self):
+            return self.mobile_source.url
+
+        def get_type(self):
+            return 'video/%s' % get_file_type(self.source.url)
 
         def render_video(self, **kwargs):
             poster_markup = '<img src="%s" height="%d" width="%d" />' % (
@@ -90,11 +92,6 @@ class AbstractVideo(models.Model):
         def __str__(self):
             return str(self.source)
     """
-    @property
-    def type(self):
-        if hasattr(self, 'source'):
-            return 'video/%s' % get_file_type(self.source.url)
-        return ''
 
     class Meta:
         abstract = True
@@ -118,16 +115,35 @@ class AbstractVideo(models.Model):
         muted = kwargs.pop('muted', self.get_muted())
 
         sources = []
-        if hasattr(self, 'sources') and self.sources.count():
-            for source in self.sources.all():
+        if hasattr(self, 'get_sources'):
+            for source_obj in self.get_sources():
                 mobile_source = \
-                    source.mobile_source.url if source.mobile_source else None
-                sources.append((source.source.url, mobile_source, source.type))
-        elif hasattr(self, 'source'):
+                    source_obj.get_mobile_source() \
+                    if hasattr(source_obj, 'get_mobile_source') \
+                    else ''
+                source = \
+                    source_obj.get_source() \
+                    if hasattr(source_obj, 'get_source') \
+                    else ''
+                source_type = \
+                    source_obj.get_type() \
+                    if hasattr(source_obj, 'get_type') \
+                    else ''
+                sources.append((source, mobile_source, source_type))
+        else:
             mobile_source = \
-                self.mobile_source.url \
-                if getattr(self, 'mobile_source', None) else ''
-            sources.append((self.source.url, mobile_source, self.type))
+                self.get_mobile_source() \
+                if hasattr(self, 'get_mobile_source') \
+                else ''
+            source = \
+                self.get_source() \
+                if hasattr(self, 'get_source') \
+                else ''
+            source_type = \
+                self.get_type() \
+                if hasattr(self, 'get_type') \
+                else ''
+            sources.append((source, mobile_source, source_type))
 
         return videoplayer(sources, autoplay=autoplay, loop=loop,
                            controls=controls, muted=muted,
@@ -182,12 +198,14 @@ class AbstractVideoSource(models.Model):
                                      validators=[validate_video_type],
                                      blank=True, null=True)
 
-    @property
-    def type(self):
+    def get_source(self):
+        return self.source.url
+
+    def get_mobile_source(self):
+        return self.mobile_source.url if self.mobile_source else ''
+
+    def get_type(self):
         return 'video/%s' % get_file_type(self.source.url)
 
     class Meta:
         abstract = True
-
-    def __str__(self):
-        return str(self.source)
