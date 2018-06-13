@@ -1,5 +1,3 @@
-// TODO: Replace these with node modules?
-
 function getWindowWidth () {
   var e = window
   var a = 'inner'
@@ -46,15 +44,26 @@ function addListenerMulti (el, s, fn) {
   s.split(' ').forEach(e => addEventListener(el, e, fn))
 }
 
+function closest (element, selector, checkYoSelf) {
+  var parent = checkYoSelf ? element : element.parentNode
+
+  while (parent && parent !== document) {
+    if (parent.matches(selector)) {
+      return parent
+    }
+    parent = parent.parentNode
+  }
+}
+
 // track loaded videos due to Chrome refusing to load any more than 6
 let nextPlayerId = 1
 const LOADED_VIDEOS = []
 
-const INITIAL_STATE = 1
-const LOADING_STATE = 2
-const PLAYING_STATE = 3
-const PAUSED_STATE = 4
-const ENDED_STATE = 5
+export const INITIAL_STATE = 1
+export const LOADING_STATE = 2
+export const PLAYING_STATE = 3
+export const PAUSED_STATE = 4
+export const ENDED_STATE = 5
 
 /**
   * @class VideoPlayer
@@ -82,7 +91,7 @@ export class VideoPlayer {
     }
 
     this.videoWrapper = el
-    this.video = this.videoWrapper.getElementsByTagName('video')[0]
+    this.video = this.videoWrapper.querySelector('.video')
 
     const defaultOptions = {
       progressUpperColor: 'currentColor',
@@ -92,10 +101,14 @@ export class VideoPlayer {
       phoneMax: 667,
       // We don't use the actual autoplay attribute so that we can support
       // autoplay on canplaythrough
-      autoplay: this.video.dataset.autoplay === 'true',
-      // We don't use the actual preload attribute, see README.md.
-      preload: this.video.dataset.preload || 'none'
+      autoplay: this.video.dataset.autoplay === 'true'
+    }
 
+    // We don't use the actual preload attribute, see README.md.
+    if (this.video.dataset.preload) {
+      defaultOptions.preload = this.video.dataset.preload.toLowerCase()
+    } else {
+      defaultOptions.preload = 'none'
     }
 
     this.options = extendObject(defaultOptions, opts)
@@ -128,7 +141,6 @@ export class VideoPlayer {
     if ((this.options.autoplay === true ||
          this.options.autoplay === 'canplaythrough') &&
         getWindowWidth() > this.options.phoneMax) {
-      this.videoWrapper.classList.add('videoplayer-loading')
       this.changeState(LOADING_STATE)
       // If the video is to autoplay, enforce preload auto.
       this.options.preload = 'auto'
@@ -257,7 +269,6 @@ export class VideoPlayer {
     })
 
     this.video.addEventListener('pause', () => {
-      this.videoWrapper.classList.remove('videoplayer-loading')
       this.videoWrapper.classList.add('videoplayer-paused')
       this.videoWrapper.classList.remove('videoplayer-playing')
 
@@ -337,7 +348,7 @@ export class VideoPlayer {
         }
         fadeout = setTimeout(() => {
           this.videoWrapper.classList.remove('user-activity')
-        }, 2000)
+        }, 1350)
       }
 
       let fadeout = null
@@ -485,14 +496,20 @@ export class VideoPlayer {
     }
 
     this.video.addEventListener('click', (e) => {
-      e.preventDefault()
-      this.playpause()
+      const target = e.target || e.srcElement
+      if (!closest(target, 'a')) {
+        e.preventDefault()
+        this.playpause()
+      }
     })
 
     for (let poster of this.posters) {
       poster.addEventListener('click', (e) => {
-        e.preventDefault()
-        this.play()
+        const target = e.target || e.srcElement
+        if (!closest(target, 'a')) {
+          e.preventDefault()
+          this.play()
+        }
       })
     }
 
@@ -608,23 +625,26 @@ export class VideoPlayer {
    * @param {string} preload
    */
   loadVideo (preload) {
-    // If we've already loaded 6 videos, remove the oldest ones until
-    // we only have 5, so the next video can start loading even in Chrome.
-    while (LOADED_VIDEOS.length > 5) {
-      const removed = LOADED_VIDEOS.shift()
-      console.warn('Five videos already loaded. Unloading oldest.')
-      removed.unloadVideo.bind(removed)()
-    }
+    if (LOADED_VIDEOS.indexOf(this) === -1) {
+      // If we've already loaded 6 videos, remove the oldest ones until
+      // we only have 5, so the next video can start loading even in Chrome.
+      while (LOADED_VIDEOS.length > 5) {
+        const removed = LOADED_VIDEOS.shift()
+        console.warn('Five videos already loaded. Unloading oldest.')
+        removed.unloadVideo.bind(removed)()
+      }
 
-    LOADED_VIDEOS.push(this)
-    this.assignSources()
-    // Results in play being called in canplay handler if autoplay is true
-    if (preload === 'metadata') {
-      // there's no method we can use to do this, so we have to rely on the
-      // preload attribute
-      this.setAttribute('preload', preload)
-    } else {
-      this.video.load()
+      LOADED_VIDEOS.push(this)
+
+      this.assignSources()
+      // Results in play being called in canplay handler if autoplay is true
+      if (preload === 'metadata') {
+        // there's no method we can use to do this, so we have to rely on the
+        // preload attribute
+        this.setAttribute('preload', preload)
+      } else {
+        this.video.load()
+      }
     }
   }
 
@@ -647,16 +667,49 @@ export class VideoPlayer {
   /**
    * Plays the video.
    *
+   * @method VideoPlayer#_play
+   */
+  _play () {
+    const promise = this.video.play()
+    promise.then(() => {
+      this.changeState(PLAYING_STATE)
+    }).catch((err) => {
+      // don't enter error state for "The play() request was interrupted by a
+      // call to pause()".
+      if (!err.code === 20) {
+        this.videoWrapper.classList.add('videoplayer-error')
+      }
+      console.error(err)
+    })
+  }
+
+  /**
+   * Entry point for playing a video. Plays the video after loading it first,
+   * if necessary.
+   *
    * @method VideoPlayer#play
    */
   play () {
     if (this.video.readyState === 0) {
-      this.videoWrapper.classList.add('videoplayer-loading')
-      this.loadVideo()
-    }
+      this.videoWrapper.classList.add('videoplayer-preplay')
+      const loadingTimeout = window.setTimeout(() => {
+        this.videoWrapper.classList.add('videoplayer-loading')
+        this.videoWrapper.classList.remove('videoplayer-preplay')
+      }, 2000)
 
-    this.video.play()
-    this.changeState(PLAYING_STATE)
+      var that = this
+      this.video.addEventListener('canplay', function callPlay () {
+        if (loadingTimeout) {
+          window.clearTimeout(loadingTimeout)
+          that.videoWrapper.classList.remove('videoplayer-preplay')
+        }
+        that.video.removeEventListener('canplay', callPlay)
+        that._play()
+      })
+      this.loadVideo()
+    } else {
+      this._play()
+    }
   }
 
   /**

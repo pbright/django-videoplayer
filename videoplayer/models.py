@@ -19,7 +19,7 @@ def validate_video_type(value):
 
 
 def get_file_type(path):
-    ext = os.path.splitext(path)[1]  # [0] returns path+filename
+    ext = os.path.splitext(path)[1].split('?')[0]
     return ext.lstrip('.').lower()
 
 
