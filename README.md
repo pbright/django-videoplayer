@@ -31,10 +31,7 @@ snippet for an HTML5 video element and its associated sources; and
 
 ## Installation
 
-1. Download the source from https://pypi.python.org/pypi/django-videoplayer/
-   and run `python setup.py install`, or:
-
-        > pip install django-videoplayer
+1. pip install -e git+git@github.com:pbright/django-videoplayer.git#egg=django-videoplayer
 
 2. Ensure that the `TEMPLATES` setting includes an entry with
 `'APP_DIRS': True`, or copy `templates/videoplayer/videoplayer.html` to a
