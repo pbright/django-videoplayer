@@ -92,6 +92,15 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       }
     }
   }
+
+  &.show-controls {
+    .videoplayer-inner {
+      .large-playpause,
+      .video-controls {
+        display: block;
+      }
+    }
+  }
 }
 
 .videoplayer-inner {
@@ -190,6 +199,11 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     border-radius: 50%;
     opacity: 1;
     visibility: inherit;
+    display: none;
+
+    .no-js & {
+      display: none !important;
+    }
 
     @media screen and (min-width: $videoplayer-tablet-min) {
       border: 3px solid;
@@ -240,6 +254,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     opacity: 0;
     visibility: hidden;
     zoom: 1;
+    display: none;
 
     &:after {
       clear: both;
@@ -357,7 +372,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
 
   $progress-bar-height: 6px;
 
-  .progress-wrap {
+  .progress-outer {
     position: absolute;
     left: 0;
     width: 100%;
@@ -475,9 +490,9 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
         font-family: sans-serif;
         content: '\258E\00a0\258E';
         letter-spacing: -.4em;
-        margin-left: .3em;
+        margin-left: .4em;
         display: block;
-        margin-top: 4px;
+        margin-top: 3px;
       }
     }
 
@@ -502,7 +517,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       visibility: hidden;
     }
 
-    .progress-wrap {
+    .progress-outer {
       visibility: inherit;
     }
   }
@@ -517,7 +532,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       visibility: inherit;
     }
 
-    .progress-wrap {
+    .progress-outer {
       visibility: inherit;
     }
 
@@ -538,7 +553,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       visibility: hidden;
     }
 
-    .progress-wrap {
+    .progress-outer {
       visibility: hidden;
     }
 
@@ -600,7 +615,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       visibility: hidden;
     }
 
-    .progress-wrap {
+    .progress-outer {
       visibility: hidden;
     }
 

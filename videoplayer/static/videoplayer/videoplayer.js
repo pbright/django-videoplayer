@@ -1,3 +1,46 @@
+/**
+ * Converts els into an array.
+ *
+ * @function makeArray
+ * @param {(Array.<HtmlElement>|HtmlElement)} els
+ * @returns {Array.<HtmlElement>}
+ */
+function makeArray (els) {
+  if (els === undefined || els === null) {
+    return []
+  }
+
+  // Some elements can be iterable, for example forms and selects. We
+  // specifically check whether els is a DOM node.
+  let arr
+  if (els.nodeType) {
+    arr = [els]
+  } else {
+    arr = Array.from(els)
+  }
+
+  if (!arr.length && els && els.length === undefined) {
+    arr = [els]
+  }
+
+  return arr
+}
+
+/**
+ * Calls fn for each element in els.
+ *
+ * We use this because IE11 is not handled correctly by Babel when we use
+ * for ... in.
+ *
+ * @function forEach
+ * @param {(Array.<HtmlElement>|HtmlElement)} els
+ * @param {function} fn
+ */
+function forEach (els, fn) {
+  const arr = makeArray(els)
+  arr.forEach(fn)
+}
+
 function getWindowWidth () {
   var e = window
   var a = 'inner'
@@ -30,14 +73,11 @@ function addEventListener (el, eventName, handler) {
 }
 
 function triggerEvent (el, eventName, options) {
-  let event
-  if (window.CustomEvent) {
-    event = new window.CustomEvent(eventName, options)
-  } else {
-    event = document.createEvent('CustomEvent')
-    event.initCustomEvent(eventName, true, true, options)
-  }
-  el.dispatchEvent(event)
+  options = options || { bubbles: false, cancelable: false, detail: undefined }
+  var evt = document.createEvent('CustomEvent')
+  evt.initCustomEvent(eventName, options.bubbles, options.cancelable,
+    options.detail)
+  el.dispatchEvent(evt)
 }
 
 function addListenerMulti (el, s, fn) {
@@ -100,8 +140,9 @@ export class VideoPlayer {
       volumeLowerColor: 'currentColor',
       phoneMax: 667,
       // We don't use the actual autoplay attribute so that we can support
-      // autoplay on canplaythrough
-      autoplay: this.video.dataset.autoplay === 'true'
+      // autoplay on canplaythrough, or on phone only
+      autoplay: this.video.dataset.autoplay === 'true',
+      autoplayMinWidth: 0
     }
 
     // We don't use the actual preload attribute, see README.md.
@@ -111,7 +152,14 @@ export class VideoPlayer {
       defaultOptions.preload = 'none'
     }
 
+    if (this.video.dataset.autoplayMinWidth) {
+      defaultOptions.autoplayMinWidth =
+        parseInt(this.video.dataset.autoplayMinWidth, 10)
+    }
+
     this.options = extendObject(defaultOptions, opts)
+
+    this.changeState(INITIAL_STATE)
 
     this.id = nextPlayerId++
     this.sources = this.video.getElementsByTagName('source')
@@ -140,7 +188,7 @@ export class VideoPlayer {
 
     if ((this.options.autoplay === true ||
          this.options.autoplay === 'canplaythrough') &&
-        getWindowWidth() > this.options.phoneMax) {
+         getWindowWidth() >= this.options.autoplayMinWidth) {
       this.changeState(LOADING_STATE)
       // If the video is to autoplay, enforce preload auto.
       this.options.preload = 'auto'
@@ -161,7 +209,7 @@ export class VideoPlayer {
    * @method VideoPlayer#assignSources
    */
   assignSources () {
-    for (let source of this.sources) {
+    forEach(this.sources, source => {
       const desktopSrc = source.dataset.src
       let mobileSrc = ''
       if (getWindowWidth() <= this.options.phoneMax) {
@@ -172,7 +220,7 @@ export class VideoPlayer {
       } else {
         source.setAttribute('src', desktopSrc)
       }
-    }
+    })
   }
 
   /**
@@ -209,20 +257,21 @@ export class VideoPlayer {
    * @method VideoPlayer#videoStateTracking
    */
   videoStateTracking () {
-    this.video.addEventListener('loadstart', () => {
+    addEventListener(this.video, 'loadstart', () => {
       const classList =
         ['videoplayer-playing', 'videoplayer-paused', 'metadata-loaded',
-          'loaded', 'canplay', 'canplaythrough']
-      for (let className of classList) {
+          'loaded', 'canplay', 'canplaythrough', 'videoplayer-ended',
+          'videoplayer-preplay']
+      forEach(classList, className => {
         this.videoWrapper.classList.remove(className)
-      }
+      })
 
       // We only set loading state here if we're delaying playback until we can
       // play through, to avoid any brief flash of the loading state prior to
       // playing.
       if ((this.options.autoplay === true ||
-          this.options.autoplay === 'canplaythrough') &&
-          getWindowWidth() > this.options.phoneMax) {
+           this.options.autoplay === 'canplaythrough') &&
+          getWindowWidth() >= this.options.autoplayMinWidth) {
         this.videoWrapper.classList.add('videoplayer-loading')
         this.changeState(LOADING_STATE)
       }
@@ -230,37 +279,37 @@ export class VideoPlayer {
       this.callHandler('loadstart')
     })
 
-    this.video.addEventListener('loadedmetadata', () => {
+    addEventListener(this.video, 'loadedmetadata', () => {
       this.videoWrapper.classList.add('metadata-loaded')
 
       this.callHandler('loadedmetadata')
     })
 
-    this.video.addEventListener('canplay', () => {
+    addEventListener(this.video, 'canplay', () => {
       this.videoWrapper.classList.add('canplay')
 
       this.callHandler('canplay')
 
       if (this.options.autoplay === true &&
-          getWindowWidth() > this.options.phoneMax &&
+          getWindowWidth() >= this.options.autoplayMinWidth &&
           this.state < PLAYING_STATE) {
         this.play()
       }
     })
 
-    this.video.addEventListener('canplaythrough', () => {
-      this.videoWrapper.classList.remove('videoplayer-loading')
+    addEventListener(this.video, 'canplaythrough', () => {
       this.videoWrapper.classList.add('canplaythrough')
 
       this.callHandler('canplaythrough')
 
       if (this.options.autoplay === 'canplaythrough' &&
-          getWindowWidth() > this.options.phoneMax) {
+          getWindowWidth() >= this.options.autoplayMinWidth &&
+          this.state < PLAYING_STATE) {
         this.play()
       }
     })
 
-    this.video.addEventListener('playing', () => {
+    addEventListener(this.video, 'playing', () => {
       this.videoWrapper.classList.remove('videoplayer-loading')
       this.videoWrapper.classList.add('videoplayer-playing')
       this.videoWrapper.classList.remove('videoplayer-paused')
@@ -268,22 +317,25 @@ export class VideoPlayer {
       this.callHandler('playing')
     })
 
-    this.video.addEventListener('pause', () => {
-      this.videoWrapper.classList.add('videoplayer-paused')
+    addEventListener(this.video, 'pause', () => {
+      if (this.video.currentTime !== 0) {
+        this.videoWrapper.classList.add('videoplayer-paused')
+      }
       this.videoWrapper.classList.remove('videoplayer-playing')
 
       this.callHandler('pause')
     })
 
-    this.video.addEventListener('ended', () => {
+    addEventListener(this.video, 'ended', () => {
       this.videoWrapper.classList.remove('videoplayer-paused')
       this.videoWrapper.classList.remove('videoplayer-playing')
+      this.videoWrapper.classList.add('videoplayer-ended')
       this.toggleFullscreen(false)
       this.callHandler('ended')
       this.changeState(ENDED_STATE)
     })
 
-    this.video.addEventListener('volumechange', () => {
+    addEventListener(this.video, 'volumechange', () => {
       if (this.video.volume === 0 || this.video.muted) {
         this.videoWrapper.classList.add('muted')
       } else {
@@ -292,51 +344,51 @@ export class VideoPlayer {
       this.callHandler('volumechange')
     })
 
-    this.video.addEventListener('loadeddata', () => {
+    addEventListener(this.video, 'loadeddata', () => {
       this.callHandler('loadeddata')
     })
 
-    this.video.addEventListener('progress', () => {
+    addEventListener(this.video, 'progress', () => {
       this.callHandler('progress')
     })
 
-    this.video.addEventListener('suspend', () => {
+    addEventListener(this.video, 'suspend', () => {
       this.callHandler('suspend')
     })
 
-    this.video.addEventListener('abort', () => {
+    addEventListener(this.video, 'abort', () => {
       this.callHandler('abort')
     })
 
-    this.video.addEventListener('error', () => {
+    addEventListener(this.video, 'error', () => {
       this.callHandler('error')
     })
 
-    this.video.addEventListener('emptied', () => {
+    addEventListener(this.video, 'emptied', () => {
       this.callHandler('emptied')
     })
 
-    this.video.addEventListener('stalled', () => {
+    addEventListener(this.video, 'stalled', () => {
       this.callHandler('stalled')
     })
 
-    this.video.addEventListener('waiting', () => {
+    addEventListener(this.video, 'waiting', () => {
       this.callHandler('waiting')
     })
 
-    this.video.addEventListener('seeking', () => {
+    addEventListener(this.video, 'seeking', () => {
       this.callHandler('seeking')
     })
 
-    this.video.addEventListener('seeked', () => {
+    addEventListener(this.video, 'seeked', () => {
       this.callHandler('seeked')
     })
 
-    this.video.addEventListener('durationchange', () => {
+    addEventListener(this.video, 'durationchange', () => {
       this.callHandler('durationchange')
     })
 
-    this.video.addEventListener('play', () => {
+    addEventListener(this.video, 'play', () => {
       this.callHandler('play')
     })
 
@@ -352,23 +404,23 @@ export class VideoPlayer {
       }
 
       let fadeout = null
-      this.video.addEventListener('mousemove', mousemoveHandler)
+      addEventListener(this.video, 'mousemove', mousemoveHandler)
 
-      for (let control of this.controls) {
-        control.addEventListener('mousemove', mousemoveHandler)
-      }
+      forEach(this.controls, control => {
+        addEventListener(control, 'mousemove', mousemoveHandler)
+      })
     }
   }
 
   /**
    * Assigns handlers to add / remove the fullscreen class to / from
-   * videoWrapper, and the fullscreened-element calss to / from the body
+   * videoWrapper, and the fullscreened-element class to / from the body
    * element.
    *
    * @method VideoPlayer#fullscreenStateTracking
    */
   fullscreenStateTracking () {
-    document.addEventListener('fullscreenchange', (e) => {
+    addEventListener(document, 'fullscreenchange', (e) => {
       const target = e.target || e.srcElement
       if (this.videoWrapper === target) {
         if (document.fullScreen || document.fullscreenElement) {
@@ -382,11 +434,11 @@ export class VideoPlayer {
       }
     })
 
-    this.video.addEventListener('webkitendfullscreen', () => {
+    addEventListener(this.video, 'webkitendfullscreen', () => {
       this.pause()
     })
 
-    document.addEventListener('webkitfullscreenchange', (e) => {
+    addEventListener(document, 'webkitfullscreenchange', (e) => {
       const target = e.target || e.srcElement
       if (this.videoWrapper === target) {
         if (document.webkitIsFullScreen) {
@@ -400,7 +452,7 @@ export class VideoPlayer {
       }
     })
 
-    document.addEventListener('mozfullscreenchange', (e) => {
+    addEventListener(document, 'mozfullscreenchange', (e) => {
       const target = e.target || e.srcElement
       if (this.videoWrapper === target) {
         if (document.mozFullScreen) {
@@ -414,7 +466,7 @@ export class VideoPlayer {
       }
     })
 
-    document.addEventListener('msfullscreenchange', (e) => {
+    addEventListener(document, 'msfullscreenchange', (e) => {
       const target = e.target || e.srcElement
       if (this.videoWrapper === target) {
         if (document.msFullscreenElement) {
@@ -442,7 +494,7 @@ export class VideoPlayer {
     // overflow: hidden, which doesn't play nicely with a thumb larger than
     // than the track. We therefore use a different workaround, setting a
     // background gradient on both input and change.
-    for (let progressBar of this.progressBars) {
+    forEach(this.progressBars, progressBar => {
       const lower = this.options.progressLowerColor
       const upper = this.options.progressUpperColor
       addListenerMulti(progressBar, 'input change', () => {
@@ -457,27 +509,27 @@ export class VideoPlayer {
       triggerEvent(progressBar, 'input')
 
       // Pause playback if user is adjusting playback position.
-      // progressBar.addEventListener('mousedown', () => {
+      // addEventListener(progressBar, 'mousedown', () => {
       //   this.videoWrapper.classList.add('scrubbing');
       //   this.video.pause();
       // });
 
       // Use input not change as we'll be triggering change programatically.
       // Also this way it updates as the user slides, not only at the end.
-      progressBar.addEventListener('input', () => {
+      addEventListener(progressBar, 'input', () => {
         const time = this.video.duration *
                      (progressBar.value / progressBar.getAttribute('max'))
         this.video.currentTime = time
       })
 
       // Resume playback when progress bar released.
-      // progressBar.addEventListener('mouseup', () => {
+      // addEventListener(progressBar, 'mouseup', () => {
       //   this.videoWrapper.classList.remove('scrubbing');
       //   this.video.play();
       // });
-    }
+    })
 
-    for (let volumeBar of this.volumeBars) {
+    forEach(this.volumeBars, volumeBar => {
       const lower = this.options.progressLowerColor
       const upper = this.options.progressUpperColor
       addListenerMulti(volumeBar, 'input change', () => {
@@ -490,12 +542,12 @@ export class VideoPlayer {
       })
       triggerEvent(volumeBar, 'input')
 
-      volumeBar.addEventListener('change', () => {
+      addEventListener(volumeBar, 'change', () => {
         this.video.volume = volumeBar.value
       })
-    }
+    })
 
-    this.video.addEventListener('click', (e) => {
+    addEventListener(this.video, 'click', (e) => {
       const target = e.target || e.srcElement
       if (!closest(target, 'a')) {
         e.preventDefault()
@@ -503,22 +555,22 @@ export class VideoPlayer {
       }
     })
 
-    for (let poster of this.posters) {
-      poster.addEventListener('click', (e) => {
+    forEach(this.posters, poster => {
+      addEventListener(poster, 'click', (e) => {
         const target = e.target || e.srcElement
         if (!closest(target, 'a')) {
           e.preventDefault()
           this.play()
         }
       })
-    }
+    })
 
-    for (let playpauseControl of this.playpauseControls) {
-      playpauseControl.addEventListener('click', (e) => {
+    forEach(this.playpauseControls, playpauseControl => {
+      addEventListener(playpauseControl, 'click', (e) => {
         e.preventDefault()
         this.playpause()
       })
-    }
+    })
 
     const fullScreenEnabled =
       !!(document.fullscreenEnabled ||
@@ -528,43 +580,43 @@ export class VideoPlayer {
          document.webkitFullscreenEnabled ||
          document.createElement('video').webkitRequestFullScreen)
 
-    for (let control of this.controls) {
-      for (let muteButton of control.getElementsByClassName('mute')) {
-        muteButton.addEventListener('click', (e) => {
+    forEach(this.controls, control => {
+      forEach(control.getElementsByClassName('mute'), muteButton => {
+        addEventListener(muteButton, 'click', (e) => {
           e.preventDefault()
           this.video.muted = !this.video.muted
         })
-      }
+      })
 
-      for (let volinc of control.getElementsByClassName('volinc')) {
-        volinc.addEventListener('click', (e) => {
+      forEach(control.getElementsByClassName('volinc'), volinc => {
+        addEventListener(volinc, 'click', (e) => {
           e.preventDefault()
           this.alterVolume('+')
         })
-      }
+      })
 
-      for (let voldec of control.getElementsByClassName('voldec')) {
-        voldec.addEventListener('click', (e) => {
+      forEach(control.getElementsByClassName('voldec'), voldec => {
+        addEventListener(voldec, 'click', (e) => {
           e.preventDefault()
           this.alterVolume('-')
         })
-      }
+      })
 
       if (!fullScreenEnabled) {
-        for (let fs of control.getElementsByClassName('fs')) {
+        forEach(control.getElementsByClassName('fs'), fs => {
           fs.style.display = 'none'
-        }
+        })
       } else {
-        for (let fs of control.getElementsByClassName('fs')) {
-          fs.addEventListener('click', (e) => {
+        forEach(control.getElementsByClassName('fs'), fs => {
+          addEventListener(fs, 'click', (e) => {
             this.toggleFullscreen()
           })
-        }
+        })
       }
-    }
+    })
 
-    for (let fallbackProgress of this.fallbackProgresses) {
-      fallbackProgress.addEventListener('click', (e) => {
+    forEach(this.fallbackProgresses, fallbackProgress => {
+      addEventListener(fallbackProgress, 'click', (e) => {
         const boundingRect = fallbackProgress.getBoundingClientRect()
         const pos = (e.pageX - boundingRect.left) / boundingRect.width
         this.video.currentTime = pos * this.video.duration
@@ -576,7 +628,7 @@ export class VideoPlayer {
                         this.video.duration) * 100) + '%'
         }
       })
-    }
+    })
   }
 
   /**
@@ -585,18 +637,18 @@ export class VideoPlayer {
    * @method VideoPlayer#progressUpdaters
    */
   progressUpdaters () {
-    this.video.addEventListener('loadedmetadata', () => {
-      for (let progressBar of this.progressBars) {
+    addEventListener(this.video, 'loadedmetadata', () => {
+      forEach(this.progressBars, progressBar => {
         progressBar.setAttribute('max', this.video.duration)
-      }
+      })
     })
 
-    this.video.addEventListener('timeupdate', () => {
+    addEventListener(this.video, 'timeupdate', () => {
       let value = this.video.currentTime
       // round to nearest .25
       value = (Math.round(value * 4) / 4).toFixed(2)
 
-      for (let progressBar of this.progressBars) {
+      forEach(this.progressBars, progressBar => {
         // fallback for browsers that don't trigger loadedmetadata correctly.
         if (!progressBar.getAttribute('max')) {
           progressBar.setAttribute('max', this.video.duration)
@@ -604,13 +656,13 @@ export class VideoPlayer {
 
         progressBar.value = value
         triggerEvent(progressBar, 'change')
-      }
+      })
 
-      for (let fallbackProgressBar of this.fallbackProgressBars) {
+      forEach(this.fallbackProgressBars, fallbackProgressBar => {
         fallbackProgressBar.style.width =
           Math.floor((this.video.currentTime /
                       this.video.duration) * 100) + '%'
-      }
+      })
 
       this.callHandler('timeupdate')
     })
@@ -657,10 +709,11 @@ export class VideoPlayer {
     this.teardown()
 
     const classNames = ['metadata-loaded', 'canplay', 'canplaythrough',
-      'videoplayer-paused', 'videoplayer-playing']
-    for (let className of classNames) {
+      'videoplayer-paused', 'videoplayer-playing', 'videoplayer-ended',
+      'videoplayer-preplay']
+    forEach(classNames, className => {
       this.videoWrapper.classList.remove(className)
-    }
+    })
     this.changeState(INITIAL_STATE)
   }
 
@@ -674,9 +727,14 @@ export class VideoPlayer {
     promise.then(() => {
       this.changeState(PLAYING_STATE)
     }).catch((err) => {
+      // If error is because user hasn't interacted with document, simply
+      // remove loading state so user sees play button
+      if (err.code === 0) {
+        this.videoWrapper.classList.remove('videoplayer-loading')
+
       // don't enter error state for "The play() request was interrupted by a
       // call to pause()".
-      if (!err.code === 20) {
+      } else if (err.code !== 20) {
         this.videoWrapper.classList.add('videoplayer-error')
       }
       console.error(err)
@@ -690,6 +748,7 @@ export class VideoPlayer {
    * @method VideoPlayer#play
    */
   play () {
+    this.videoWrapper.classList.remove('videoplayer-ended')
     if (this.video.readyState === 0) {
       this.videoWrapper.classList.add('videoplayer-preplay')
       const loadingTimeout = window.setTimeout(() => {
@@ -698,7 +757,7 @@ export class VideoPlayer {
       }, 2000)
 
       var that = this
-      this.video.addEventListener('canplay', function callPlay () {
+      addEventListener(this.video, 'canplay', function callPlay () {
         if (loadingTimeout) {
           window.clearTimeout(loadingTimeout)
           that.videoWrapper.classList.remove('videoplayer-preplay')
@@ -805,7 +864,7 @@ export class VideoPlayer {
    * Note that this function does not alter the poster.
    *
    * @method VideoPlayer#replaceSrc
-   * @param {Object} data - {sources: [{source: '', mobileSource: ''}, ...]}
+   * @param {Object} data - {sources: [{source: '', mobileSource: '', type: ''}, ...]}
    * @param {string} play - whether to play the video immediately after loading
    */
   replaceSrc (data, play) {
@@ -817,22 +876,100 @@ export class VideoPlayer {
       this.changeState(LOADING_STATE)
     }
 
-    for (let source of this.sources) {
+    forEach(this.sources, source => {
       source.parentNode.removeChild(source)
-    }
+    })
 
-    for (let sourceDict of data.sources) {
-      const newSource = document.createElement('<source></source>')
-      newSource.dataset.src = sourceDict.source
-      newSource.dataset.mobileSrc = sourceDict.mobileSource
-      this.video.appendChild(newSource)
+    if (data.sources) {
+      forEach(data.sources, sourceDict => {
+        const newSource = document.createElement('source')
+        newSource.dataset.src = sourceDict.source
+        newSource.dataset.mobileSrc = sourceDict.mobileSource
+        newSource.setAttribute('type', sourceDict.type)
+        this.video.appendChild(newSource)
+      })
     }
 
     this.sources = this.video.getElementsByTagName('source')
 
     if (play) {
       this.loadVideo()
-      this.video.play()
+      this._play()
+    }
+  }
+
+  /**
+   * Replaces the entire video-player based on data. See docstring for
+   * replaceSrc regarding data.sources.
+   *
+   * @method VideoPlayer#replaceVideoPlayer
+   * @param {Object} data - a JSON representation of a video-player.
+   */
+  replaceVideoPlayer (data) {
+    const videoplayerInner =
+      this.videoWrapper.querySelector('.videoplayer-inner')
+
+    let posterEls = Array.from(videoplayerInner.children).filter(
+      (el) => el.matches(
+        ':not(noscript):not(.video):not(.playpause):not(.video-controls)'))
+
+    forEach(posterEls, posterEl => {
+      posterEl.parentNode.removeChild(posterEl)
+    })
+
+    if (data.poster_markup) {
+      const newPoster = document.createElement('div')
+      newPoster.innerHTML = data.poster_markup
+      posterEls = Array.from(newPoster.children)
+      forEach(posterEls, posterEl => {
+        videoplayerInner.appendChild(posterEl)
+      })
+    }
+
+    let playImmediately = !!data.autoplay
+    if (data.autoplayMinWidth) {
+      playImmediately = playImmediately &&
+        getWindowWidth() >= data.autoplayMinWidth
+    }
+
+    if (playImmediately) {
+      // If the video is to autoplay, enforce preload auto.
+      data.preload = 'auto'
+    }
+
+    this.video.setAttribute('preload', data.preload)
+
+    if (data.muted) {
+      this.video.setAttribute('muted', '')
+    } else {
+      this.video.removeAttribute('muted')
+    }
+
+    if (data.playsinline) {
+      this.video.setAttribute('playsinline', '')
+    } else {
+      this.video.removeAttribute('playsinline')
+    }
+
+    this.replaceSrc(data, playImmediately)
+
+    if (data.loop) {
+      this.video.setAttribute('loop', '')
+    } else {
+      this.video.removeAttribute('loop')
+    }
+
+    this.videoWrapper.classList.toggle('show-controls', !!data.controls)
+
+    let caption = this.videoWrapper.querySelector('.caption')
+    if (caption) {
+      caption.parentNode.removeChild(caption)
+    }
+    if (data.caption) {
+      caption = document.createElement('p')
+      caption.setAttribute('class', 'caption')
+      caption.innerHTML = data.caption
+      this.videoWrapper.appendChild(caption)
     }
   }
 
@@ -848,9 +985,9 @@ export class VideoPlayer {
     // See GOTCHAS.md.
     this.video.pause()
 
-    for (let source of this.sources) {
+    forEach(this.sources, source => {
       source.removeAttribute('src')
-    }
+    })
     this.video.load()
 
     for (let i = LOADED_VIDEOS.length - 1; i >= 0; i--) {

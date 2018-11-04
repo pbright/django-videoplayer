@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
 
-from .application import videoplayer
+from .application import videoplayer, video_json
 
 
 VALID_TYPES = ['mp4', 'webm', 'ogg']
@@ -108,11 +108,15 @@ class AbstractVideo(models.Model):
     def get_muted(self):
         return getattr(self, 'muted', False)
 
+    def get_playsinline(self):
+        return getattr(self, 'playsinline', False)
+
     def render_video(self, **kwargs):
         autoplay = kwargs.pop('autoplay', self.get_autoplay())
         loop = kwargs.pop('loop', self.get_loop())
         controls = kwargs.pop('controls', self.get_controls())
         muted = kwargs.pop('muted', self.get_muted())
+        playsinline = kwargs.pop('playsinline', self.get_playsinline())
 
         sources = []
         if hasattr(self, 'get_sources'):
@@ -147,7 +151,57 @@ class AbstractVideo(models.Model):
 
         return videoplayer(sources, autoplay=autoplay, loop=loop,
                            controls=controls, muted=muted,
-                           **kwargs)
+                           playsinline=playsinline, **kwargs)
+
+    def video_json(self, **kwargs):
+        autoplay = kwargs.pop('autoplay', self.get_autoplay())
+        loop = kwargs.pop('loop', self.get_loop())
+        controls = kwargs.pop('controls', self.get_controls())
+        muted = kwargs.pop('muted', self.get_muted())
+        playsinline = kwargs.pop('playsinline', self.get_playsinline())
+
+        sources = []
+        if hasattr(self, 'get_sources'):
+            for source_obj in self.get_sources():
+                mobile_source = \
+                    source_obj.get_mobile_source() \
+                    if hasattr(source_obj, 'get_mobile_source') \
+                    else ''
+                source = \
+                    source_obj.get_source() \
+                    if hasattr(source_obj, 'get_source') \
+                    else ''
+                source_type = \
+                    source_obj.get_type() \
+                    if hasattr(source_obj, 'get_type') \
+                    else ''
+                sources.append({
+                    'source': source,
+                    'mobileSource': mobile_source,
+                    'type': source_type
+                })
+        else:
+            mobile_source = \
+                self.get_mobile_source() \
+                if hasattr(self, 'get_mobile_source') \
+                else ''
+            source = \
+                self.get_source() \
+                if hasattr(self, 'get_source') \
+                else ''
+            source_type = \
+                self.get_type() \
+                if hasattr(self, 'get_type') \
+                else ''
+            sources.append({
+                'source': source,
+                'mobileSource': mobile_source,
+                'type': source_type
+            })
+
+        return video_json(sources, autoplay=autoplay, loop=loop,
+                          controls=controls, muted=muted,
+                          playsinline=playsinline, **kwargs)
 
 
 class AbstractVideoSource(models.Model):
