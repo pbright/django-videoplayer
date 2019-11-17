@@ -830,10 +830,14 @@ export class VideoPlayer {
   /**
    * Toggles whether the videoplayer is fullscreen or not.
    *
+   * Slightly unusual if conditions are to prevent fullscreen being ended when
+   * the video is not fullscreen (when toggle === false), as doing so causes an
+   * exception in some browsers.
+   *
    * @method VideoPlayer#toggleFullscreen
    */
   toggleFullscreen (toggle) {
-    if (this.isFullScreen() || toggle === false) {
+    if (this.isFullScreen() && toggle !== true) {
       if (document.exitFullscreen) {
         document.exitFullscreen()
       } else if (document.mozCancelFullScreen) {
@@ -843,7 +847,7 @@ export class VideoPlayer {
       } else if (document.msExitFullscreen) {
         document.msExitFullscreen()
       }
-    } else {
+    } else if (!this.isFullScreen() && toggle !== false) {
       if (this.videoWrapper.requestFullscreen) {
         this.videoWrapper.requestFullscreen()
       } else if (this.videoWrapper.mozRequestFullScreen) {

@@ -175,11 +175,7 @@ class AbstractVideo(models.Model):
                     source_obj.get_type() \
                     if hasattr(source_obj, 'get_type') \
                     else ''
-                sources.append({
-                    'source': source,
-                    'mobileSource': mobile_source,
-                    'type': source_type
-                })
+                sources.append((source, mobile_source, source_type))
         else:
             mobile_source = \
                 self.get_mobile_source() \
@@ -193,11 +189,7 @@ class AbstractVideo(models.Model):
                 self.get_type() \
                 if hasattr(self, 'get_type') \
                 else ''
-            sources.append({
-                'source': source,
-                'mobileSource': mobile_source,
-                'type': source_type
-            })
+            sources.append((source, mobile_source, source_type))
 
         return video_json(sources, autoplay=autoplay, loop=loop,
                           controls=controls, muted=muted,
