@@ -142,7 +142,8 @@ export class VideoPlayer {
       // We don't use the actual autoplay attribute so that we can support
       // autoplay on canplaythrough, or on phone only
       autoplay: this.video.dataset.autoplay === 'true',
-      autoplayMinWidth: 0
+      autoplayMinWidth: 0,
+      playOnPosterClick: true
     }
 
     // We don't use the actual preload attribute, see README.md.
@@ -555,15 +556,17 @@ export class VideoPlayer {
       }
     })
 
-    forEach(this.posters, poster => {
-      addEventListener(poster, 'click', (e) => {
-        const target = e.target || e.srcElement
-        if (!closest(target, 'a')) {
-          e.preventDefault()
-          this.play()
-        }
+    if (this.options.playOnPosterClick) {
+      forEach(this.posters, poster => {
+        addEventListener(poster, 'click', (e) => {
+          const target = e.target || e.srcElement
+          if (!closest(target, 'a')) {
+            e.preventDefault()
+            this.play()
+          }
+        })
       })
-    })
+    }
 
     forEach(this.playpauseControls, playpauseControl => {
       addEventListener(playpauseControl, 'click', (e) => {
