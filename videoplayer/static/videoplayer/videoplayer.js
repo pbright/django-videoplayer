@@ -214,7 +214,7 @@ export class VideoPlayer {
       const desktopSrc = source.dataset.src
       let mobileSrc = ''
       if (getWindowWidth() <= this.options.phoneMax) {
-        mobileSrc = source.dataset.mobileSrc
+        mobileSrc = source.dataset.mobilesrc
       }
       if (mobileSrc) {
         source.setAttribute('src', mobileSrc)
@@ -891,7 +891,7 @@ export class VideoPlayer {
       forEach(data.sources, sourceDict => {
         const newSource = document.createElement('source')
         newSource.dataset.src = sourceDict.source
-        newSource.dataset.mobileSrc = sourceDict.mobileSource
+        newSource.dataset.mobilesrc = sourceDict.mobileSource
         newSource.setAttribute('type', sourceDict.type)
         this.video.appendChild(newSource)
       })
