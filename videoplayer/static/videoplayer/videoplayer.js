@@ -693,7 +693,7 @@ export class VideoPlayer {
       if (preload === 'metadata') {
         // there's no method we can use to do this, so we have to rely on the
         // preload attribute
-        this.setAttribute('preload', preload)
+        this.video.setAttribute('preload', preload)
       } else {
         this.video.load()
       }
