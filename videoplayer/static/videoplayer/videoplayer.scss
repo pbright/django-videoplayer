@@ -94,26 +94,24 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
   }
 
   &.show-controls {
-    .videoplayer-inner {
-      .large-playpause,
-      .video-controls {
-        display: block;
-      }
+    .large-playpause,
+    .video-controls {
+      display: block;
     }
   }
-}
 
-.videoplayer-inner {
-  // avoid flickering video when transitions are happening elsewhere on page
-  -webkit-transform: translate3d(0, 0, 0);
-  transform: translate3d(0, 0, 0);
-  position: relative;
-  width: 100%;
-  overflow: hidden;
+  .videoplayer-inner {
+    // avoid flickering video when transitions are happening elsewhere on page
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    position: relative;
+    width: 100%;
+    overflow: hidden;
 
-  .no-js & {
-    noscript + .video {
-      display: none;
+    .no-js & {
+      noscript + .video {
+        display: none;
+      }
     }
   }
 
@@ -124,6 +122,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     left: 0;
     width: 100%;
     top: 0;
+    height: 100%;
     background: $videoplayer-background;
     visibility: hidden;
 
@@ -158,8 +157,6 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
     .caption {
       top: 100%;
       left: 1px;
-      margin-top: 10px;
-      font-size: 15px;
 
       @media screen and (min-width: $videoplayer-tablet-min) {
         position: absolute;  // to .image / .poster
@@ -167,6 +164,11 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
 
       @media screen and (max-width: $videoplayer-phone-max) {
         position: absolute;  // to .videoplayer-inner
+      }
+
+      p {
+        margin-top: 10px;
+        font-size: 15px;
       }
     }
   }
@@ -245,6 +247,7 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
   .video-controls {
     position: absolute;
     background: $videoplayer-controls-background;
+    color: $videoplayer-controls-color;
     bottom: 0;
     padding: 12px 6px 6px 6px;
     left: 0;
@@ -268,7 +271,6 @@ $fullscreen-zindex: 2147483647 !default; // largest 32-bit integer
       border: 0;
       outline: 0;
       font-size: inherit;
-      color: $videoplayer-controls-color;
       border-color: $videoplayer-controls-color;
 
       .no-touchevents &:hover {

@@ -32,11 +32,15 @@
     </video>
     {% include 'videoplayer/snippets/controls.html' %}
     {% include 'videoplayer/snippets/playpause.html' %}
-    {% if poster_markup  %}
+    {% if poster_markup %}
       {{ poster_markup|safe }}
     {% endif %}
   </div>
   {% if caption %}
-    <p class='caption'>{{ caption }}</p>
+    <div class='caption'>
+      <p>
+        {{ caption }}
+      </p>
+    </div>
   {% endif %}
 </div>
