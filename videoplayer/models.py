@@ -238,11 +238,12 @@ class AbstractVideoSource(models.Model):
     class VideoSource(AbstractVideoSource):
         video = models.ForeignKey(Video, related_name='sources')
     """
-    source = models.FileField(upload_to=settings.UPLOAD_PATH,
-                              validators=[validate_video_type])
-    mobile_source = models.FileField(upload_to=settings.UPLOAD_PATH,
-                                     validators=[validate_video_type],
-                                     blank=True, null=True)
+    source = models.FileField(
+        verbose_name='video file', upload_to=settings.UPLOAD_PATH,
+        validators=[validate_video_type])
+    mobile_source = models.FileField(
+        verbose_name='phone sized video file', upload_to=settings.UPLOAD_PATH,
+        validators=[validate_video_type], blank=True, null=True)
 
     def get_source(self):
         return self.source.url
